@@ -1,0 +1,33 @@
+# OpenCode local config (may contain API keys)
+opencode.json
+
+# Hardware configuration (generated per-machine, contains disk UUIDs)
+hosts/*/hardware-configuration.nix
+
+# Nix build outputs
+result
+result-*
+
+# Nix flake lock (optional - some prefer to commit this for reproducibility)
+# Uncomment if you want to pin exact versions:
+# flake.lock
+
+# Secrets and sensitive files (if using agenix/sops-nix in future)
+secrets/
+*.age
+*.sops.yaml
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak

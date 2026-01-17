@@ -8,17 +8,19 @@
 #   - Principle V: Documentation as Code (inline comments)
 #
 # To deploy:
-#   1. Copy hardware-configuration.nix.example to hardware-configuration.nix
-#   2. Generate actual hardware config: nixos-generate-config --show-hardware-config
-#   3. Update the SSH key in modules/user/default.nix
-#   4. Run: sudo nixos-rebuild switch --flake .#devbox
+#   1. Edit hardware-configuration.nix.example with your disk UUIDs and hardware
+#      (or generate with: nixos-generate-config --show-hardware-config)
+#   2. Update the SSH key in modules/user/default.nix
+#   3. Run: sudo nixos-rebuild switch --flake .#devbox
 
 { config, lib, pkgs, inputs, ... }:
 
 {
   imports = [
-    # Hardware configuration (generated per-machine, gitignored)
-    ./hardware-configuration.nix
+    # Hardware configuration (template - customize for your machine)
+    # To use: copy to hardware-configuration.nix.local (gitignored) and import that instead
+    # Or edit this file directly with your hardware config
+    ./hardware-configuration.nix.example
 
     # Core system settings
     ../../modules/core

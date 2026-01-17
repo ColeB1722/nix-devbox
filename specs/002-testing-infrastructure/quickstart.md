@@ -7,6 +7,25 @@
 - Nix with flakes enabled
 - Git repository initialized
 
+## Installing Nix
+
+If you don't have Nix installed, use the Determinate Systems installer (recommended):
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+```
+
+This installer:
+- Enables flakes by default
+- Works on Linux and macOS
+- Provides an uninstall option
+- Same installer used in CI
+
+After installation, restart your shell or run:
+```bash
+. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+```
+
 ## Quick Setup
 
 ### 1. Enter the Development Shell
@@ -54,10 +73,15 @@ nix flake check
 
 ## CI Workflow
 
-GitHub Actions automatically runs on push/PR:
-1. Installs Nix via DeterminateSystems installer
-2. Runs `nix flake check`
-3. Builds NixOS configuration
+GitHub Actions runs different checks based on branch:
+
+| Branch | Format Check | Flake Check | Build |
+|--------|--------------|-------------|-------|
+| Feature branches | Yes | No | No |
+| `release/*` | Yes | Yes | Yes |
+| `main` | Yes | Yes | Yes |
+
+This keeps feature branch CI fast while ensuring release branches are fully validated.
 
 ## Fixing Issues
 

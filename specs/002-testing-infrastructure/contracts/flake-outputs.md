@@ -1,10 +1,10 @@
 # Contract: Expected Flake Output Structure
-#
-# This file documents the expected shape of flake outputs after
-# implementing the testing infrastructure feature.
-#
-# NOTE: This is a documentation file, not executable Nix code.
 
+This file documents the expected shape of flake outputs after implementing the testing infrastructure feature.
+
+**NOTE**: This is a documentation file with example Nix code.
+
+```nix
 {
   # Existing outputs (from 001-devbox-skeleton)
   nixosConfigurations.devbox = { /* NixOS configuration */ };
@@ -44,3 +44,4 @@
     aarch64-darwin = "/* nixfmt-rfc-style package */";
   };
 }
+```

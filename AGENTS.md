@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2026-01-17
 
 ## Active Technologies
+- Nix (flakes format, NixOS 24.05+) + git-hooks.nix (cachix), nixfmt, statix, deadnix (002-testing-infrastructure)
+- N/A (configuration files only) (002-testing-infrastructure)
 
 - Nix (flakes format, NixOS 24.05+) + NixOS modules, Home Manager, Tailscale (001-devbox-skeleton)
 
@@ -78,6 +80,7 @@ The following security properties are enforced via NixOS assertions:
 - User MUST have at least one SSH key (modules/user/default.nix)
 
 ## Recent Changes
+- 002-testing-infrastructure: Added Nix (flakes format, NixOS 24.05+) + git-hooks.nix (cachix), nixfmt, statix, deadnix
 
 - 001-devbox-skeleton: Implemented complete NixOS flake structure with modular architecture
 

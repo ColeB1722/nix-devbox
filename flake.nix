@@ -27,10 +27,8 @@
 
     # Pre-commit hooks for code quality
     # Provides sandboxed hook execution via `nix flake check`
-    git-hooks = {
-      url = "github:cachix/git-hooks.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Note: Uses its own nixpkgs to avoid version incompatibility with 24.05
+    git-hooks.url = "github:cachix/git-hooks.nix";
 
     # System types for multi-platform support
     systems.url = "github:nix-systems/default";

@@ -1,50 +1,119 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+=============================================================================
+SYNC IMPACT REPORT
+=============================================================================
+Version change: N/A (initial) → 1.0.0
+Modified principles: N/A (initial ratification)
+Added sections:
+  - Core Principles (5 principles)
+  - Technology Constraints
+  - Development Workflow
+  - Governance
+Removed sections: N/A (initial)
+Templates requiring updates:
+  - .specify/templates/plan-template.md: ✅ Compatible (Constitution Check section generic)
+  - .specify/templates/spec-template.md: ✅ Compatible (no constitution-specific references)
+  - .specify/templates/tasks-template.md: ✅ Compatible (no constitution-specific references)
+Follow-up TODOs: None
+=============================================================================
+-->
+
+# nix-devbox Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Declarative Configuration
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+All system configuration MUST be declaratively defined in Nix expressions. No imperative
+system modifications are permitted outside of Nix management.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- Every installed package, service, and configuration MUST be tracked in version control
+- System state MUST be reproducible from repository contents alone
+- Ad-hoc `nix-env -i` installations are prohibited; use flakes or configuration.nix
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: Reproducibility is the core value proposition. If configuration cannot be
+rebuilt identically on a fresh machine, the devbox loses its primary purpose.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Headless-First Design
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+The devbox is a remote, headless server. All tooling MUST be CLI-compatible and
+SSH-accessible.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- No GUI applications or desktop environments SHALL be installed
+- All configuration MUST be manageable via terminal (SSH/Tailscale)
+- Interactive tools MUST support non-interactive/scripted operation where feasible
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: This is personal infrastructure for remote development. GUI overhead
+wastes resources and complicates remote access.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Security by Default
+
+Remote access requires defense in depth. Security configuration MUST NOT be
+weakened for convenience.
+
+- SSH MUST use key-based authentication only; password auth is prohibited
+- Tailscale MUST be the primary network access method; minimize public exposure
+- Firewall rules MUST default-deny; explicitly allow only required services
+- Secrets MUST NOT be committed to the repository; use agenix, sops-nix, or equivalent
+
+**Rationale**: A self-hosted remote machine is an attack surface. Security lapses
+compound when the machine hosts development credentials and workflows.
+
+### IV. Modular and Reusable
+
+Configuration MUST be organized into composable modules for reuse across machines
+or projects.
+
+- Each logical concern (e.g., shell, editor, language toolchain) SHOULD be a separate module
+- Modules MUST declare their dependencies explicitly
+- Machine-specific overrides MUST be isolated from reusable module definitions
+
+**Rationale**: The goal is a portable devbox. Monolithic configuration defeats
+reusability and increases maintenance burden.
+
+### V. Documentation as Code
+
+Configuration MUST be self-documenting. Users (including future-you) MUST be able
+to understand and modify the system without external tribal knowledge.
+
+- Each module MUST include comments explaining non-obvious decisions
+- README MUST provide quickstart instructions sufficient for fresh deployment
+- Breaking changes MUST be documented in commit messages or a changelog
+
+**Rationale**: Personal infrastructure often suffers from "works on my machine" syndrome.
+Documentation ensures the devbox remains useful months or years later.
+
+## Technology Constraints
+
+**Platform**: NixOS (primary) or Nix on Linux (Darwin support is out of scope for server)
+**Access Methods**: SSH, Tailscale
+**Configuration Format**: Nix flakes (preferred) or classic Nix expressions
+**Secret Management**: agenix, sops-nix, or environment-variable injection at runtime
+
+Prohibited:
+- Ansible, Puppet, Chef, or other non-Nix configuration management overlays
+- Docker for services that can be natively managed by NixOS modules
+- Manual system configuration not captured in Nix
+
+## Development Workflow
+
+1. **Branch for changes**: Feature branches for non-trivial modifications
+2. **Test locally**: Use `nixos-rebuild build` or `nix build` before deployment
+3. **Deploy incrementally**: Use `nixos-rebuild switch` with rollback awareness
+4. **Document decisions**: Update comments or README when adding/changing modules
+
+**Rollback Protocol**: If a deployment breaks the system, use `nixos-rebuild switch
+--rollback` or boot into a previous generation from the bootloader.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution governs all contributions to the nix-devbox repository.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+- Amendments require updating this document with rationale and version bump
+- Version follows semantic versioning:
+  - MAJOR: Principle removal or redefinition
+  - MINOR: New principle or section added
+  - PATCH: Clarifications or typo fixes
+- Compliance is self-enforced (personal repo); periodic review recommended quarterly
+
+**Version**: 1.0.0 | **Ratified**: 2026-01-17 | **Last Amended**: 2026-01-17

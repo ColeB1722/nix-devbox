@@ -134,8 +134,8 @@
 **Dependency rules**:
 1. All modules can be enabled independently (no hard imports)
 2. Firewall trusts tailscale0 even if Tailscale module not imported (graceful)
-3. SSH works without user module but produces warning (no keys)
-4. User module fails assertion if no SSH keys provided
+3. SSH module works standalone but requires keys configured elsewhere
+4. User module fails assertion (build error) if no valid SSH keys provided
 
 ## Flake Contract
 

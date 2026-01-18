@@ -39,6 +39,9 @@
 
     # User account and Home Manager
     ../../modules/user
+
+    # Tailscale VPN (runs inside WSL with userspace networking)
+    ../../modules/networking/tailscale.nix
   ];
 
   # ─────────────────────────────────────────────────────────────────────────────
@@ -93,13 +96,35 @@
   networking.firewall = {
     enable = true;
 
-    # Allow SSH from anywhere since Windows/Tailscale handles external filtering
-    # WSL is essentially "behind" the Windows firewall + Tailscale ACLs
+    # Allow SSH for local WSL connections
     allowedTCPPorts = [ 22 ];
 
-    # No Tailscale interface in WSL - it runs on Windows
-    trustedInterfaces = [ ];
+    # Trust Tailscale interface - SSH access is controlled by Tailscale ACLs
+    trustedInterfaces = [ "tailscale0" ];
   };
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Tailscale Configuration (WSL-specific)
+  # ─────────────────────────────────────────────────────────────────────────────
+  #
+  # Tailscale runs inside WSL with userspace networking mode.
+  # This gives WSL its own Tailscale identity (tag:shared) separate from Windows.
+  #
+  # After first rebuild, manually authenticate:
+  #   sudo tailscale up --authkey=<shared_auth_key>
+  #
+  # Get the auth key from homelab-iac:
+  #   cd ~/repos/homelab-iac && just output tailscale shared_auth_key
+
+  # Enable Tailscale with WSL-compatible settings
+  devbox.tailscale = {
+    enable = true;
+    # No routing features needed for basic connectivity
+    useRoutingFeatures = "none";
+  };
+
+  # WSL requires userspace networking (no kernel WireGuard support)
+  services.tailscale.interfaceName = "userspace-networking";
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Disable bare-metal specific features

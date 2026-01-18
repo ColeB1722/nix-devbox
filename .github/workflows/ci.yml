@@ -6,13 +6,15 @@
 #
 # Pipeline:
 # - All triggers: format check → flake check → build
-# - Push to main only: publish to FlakeHub
+# - Push to main only: publish to FlakeHub with cached store paths
 #
 # Feature branches get no CI until they open a PR.
 # Pre-commit hooks handle local validation.
 #
-# Uses DeterminateSystems determinate-nix-action for modern flake support
-# with integrated caching via FlakeHub Cache.
+# Uses DeterminateSystems actions with FlakeHub Cache for fast builds:
+# - determinate-nix-action: Installs Nix with FlakeHub integration
+# - flakehub-cache-action: Pushes/pulls from FlakeHub binary cache
+# - flakehub-push: Publishes flake with resolved store paths
 
 name: CI
 
@@ -39,8 +41,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Nix with caching
+      - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: Setup FlakeHub Cache
+        uses: DeterminateSystems/flakehub-cache-action@main
 
       - name: Check formatting
         run: nix fmt -- --check .
@@ -48,8 +53,10 @@ jobs:
       - name: Run flake check
         run: nix flake check
 
-      - name: Build NixOS configuration
-        run: nix build .#nixosConfigurations.devbox.config.system.build.toplevel
+      - name: Build NixOS configurations
+        run: |
+          nix build .#nixosConfigurations.devbox.config.system.build.toplevel
+          nix build .#nixosConfigurations.devbox-wsl.config.system.build.toplevel
 
   publish:
     name: Publish to FlakeHub
@@ -64,6 +71,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
 
+      - name: Setup FlakeHub Cache
+        uses: DeterminateSystems/flakehub-cache-action@main
+
       - name: Publish flake to FlakeHub
         uses: DeterminateSystems/flakehub-push@main
         with:
@@ -72,6 +82,9 @@ jobs:
           visibility: private
           # Rolling tag tracks latest main branch
           rolling: true
+          # Include resolved store paths for faster downstream builds
+          # Consumers can fetch pre-built derivations from FlakeHub Cache
+          include-output-paths: true
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Deploy Job (Manual Example)

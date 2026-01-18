@@ -79,7 +79,7 @@ jobs:
         with:
           # Publish as coal-bap/nix-devbox on FlakeHub
           name: coal-bap/nix-devbox
-          visibility: private
+          visibility: public
           # Rolling tag tracks latest main branch
           rolling: true
           # Include resolved store paths for faster downstream builds

@@ -60,7 +60,11 @@
             # Detect antipatterns and inefficient Nix code
             statix.enable = true;
             # Find unused variables and function arguments
-            deadnix.enable = true;
+            # --no-underscore: ignore bindings starting with _ (intentionally unused)
+            deadnix = {
+              enable = true;
+              settings.noUnderscore = true;
+            };
           };
         };
     in
@@ -84,10 +88,10 @@
             # Home Manager as NixOS module for atomic system+user updates
             home-manager.nixosModules.home-manager
             {
-              home-manager.useGlobalPkgs = true; # Use system nixpkgs
-              home-manager.useUserPackages = true; # Install to /etc/profiles
-              home-manager.extraSpecialArgs = {
-                inherit inputs;
+              home-manager = {
+                useGlobalPkgs = true; # Use system nixpkgs
+                useUserPackages = true; # Install to /etc/profiles
+                extraSpecialArgs = { inherit inputs; };
               };
             }
           ];

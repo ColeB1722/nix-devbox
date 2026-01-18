@@ -9,9 +9,9 @@
 #   - Principle V: Documentation as Code (inline comments)
 
 {
-  config,
+  _config,
   lib,
-  pkgs,
+  _pkgs,
   ...
 }:
 

@@ -15,7 +15,7 @@
   config,
   lib,
   pkgs,
-  inputs,
+  _inputs,
   ...
 }:
 

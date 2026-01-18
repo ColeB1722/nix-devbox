@@ -14,10 +14,10 @@
 #   3. Run: sudo nixos-rebuild switch --flake .#devbox
 
 {
-  config,
-  lib,
+  _config,
+  _lib,
   pkgs,
-  inputs,
+  _inputs,
   ...
 }:
 

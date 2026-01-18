@@ -16,7 +16,7 @@
 {
   config,
   lib,
-  pkgs,
+  _pkgs,
   ...
 }:
 

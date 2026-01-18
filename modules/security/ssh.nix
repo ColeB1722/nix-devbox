@@ -18,8 +18,8 @@
 
 {
   config,
-  lib,
-  pkgs,
+  _lib,
+  _pkgs,
   ...
 }:
 

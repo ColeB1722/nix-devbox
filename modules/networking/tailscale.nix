@@ -61,8 +61,7 @@ in
     # Enable Tailscale service
     services.tailscale = {
       enable = true;
-      useRoutingFeatures = cfg.useRoutingFeatures;
-      port = cfg.port;
+      inherit (cfg) useRoutingFeatures port;
     };
 
     # Ensure tailscale CLI is available

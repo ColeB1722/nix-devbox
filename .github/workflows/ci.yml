@@ -5,8 +5,12 @@
 # - PRs targeting main or release/* branches
 #
 # Pipeline:
-# - All triggers: format check → flake check → build
-# - Push to main only: publish to FlakeHub with cached store paths
+# - release/* branches: Full validation (format → check → build)
+# - main branch: Lightweight validation (format → check) → publish to FlakeHub
+#
+# Rationale: Code is fully validated on release branches before merging to main.
+# Main branch only needs quick validation before publishing to FlakeHub.
+# FlakeHub Cache handles builds on-demand when consumers pull the flake.
 #
 # Feature branches get no CI until they open a PR.
 # Pre-commit hooks handle local validation.
@@ -34,9 +38,16 @@ permissions:
   contents: read
 
 jobs:
-  ci:
-    name: Format, Check, Build
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Full CI: release/* branches get complete validation including builds
+  # ─────────────────────────────────────────────────────────────────────────────
+  ci-full:
+    name: Full CI (Format, Check, Build)
     runs-on: ubuntu-latest
+    # Run on release branches (push or PR targeting release)
+    if: |
+      startsWith(github.ref, 'refs/heads/release/') ||
+      (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release/'))
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -58,10 +69,39 @@ jobs:
           nix build .#nixosConfigurations.devbox.config.system.build.toplevel
           nix build .#nixosConfigurations.devbox-wsl.config.system.build.toplevel
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Quick CI: main branch gets lightweight validation (no build)
+  # ─────────────────────────────────────────────────────────────────────────────
+  ci-quick:
+    name: Quick CI (Format, Check)
+    runs-on: ubuntu-latest
+    # Run on main branch (push or PR targeting main)
+    if: |
+      github.ref == 'refs/heads/main' ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: Setup FlakeHub Cache
+        uses: DeterminateSystems/flakehub-cache-action@main
+
+      - name: Check formatting
+        run: nix fmt -- --check .
+
+      - name: Run flake check
+        run: nix flake check
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Publish: Push to FlakeHub after quick validation passes
+  # ─────────────────────────────────────────────────────────────────────────────
   publish:
     name: Publish to FlakeHub
     runs-on: ubuntu-latest
-    needs: ci
+    needs: ci-quick
     # Only publish on push to main (not PRs, not release branches)
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:

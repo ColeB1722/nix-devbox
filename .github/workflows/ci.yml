@@ -4,13 +4,15 @@
 # - Push to main or release/* branches
 # - PRs targeting main or release/* branches
 #
-# Pipeline: format check → flake check → build (single job for efficiency)
+# Pipeline:
+# - All triggers: format check → flake check → build
+# - Push to main only: publish to FlakeHub
 #
 # Feature branches get no CI until they open a PR.
 # Pre-commit hooks handle local validation.
 #
 # Uses DeterminateSystems determinate-nix-action for modern flake support
-# with integrated caching.
+# with integrated caching via FlakeHub Cache.
 
 name: CI
 
@@ -24,7 +26,7 @@ on:
       - main
       - 'release/**'
 
-# Required for FlakeHub Cache authentication
+# Required for FlakeHub Cache and FlakeHub publish authentication
 permissions:
   id-token: write
   contents: read
@@ -49,12 +51,66 @@ jobs:
       - name: Build NixOS configuration
         run: nix build .#nixosConfigurations.devbox.config.system.build.toplevel
 
-  # Future: deploy job
+  publish:
+    name: Publish to FlakeHub
+    runs-on: ubuntu-latest
+    needs: ci
+    # Only publish on push to main (not PRs, not release branches)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: Publish flake to FlakeHub
+        uses: DeterminateSystems/flakehub-push@main
+        with:
+          visibility: private
+          # Rolling tag tracks latest main branch
+          rolling: true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Deploy Job (Manual Example)
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Uncomment and configure when ready to enable automated deployment.
+  # Requires:
+  #   1. Tailscale auth key stored as secret: TAILSCALE_AUTHKEY
+  #   2. SSH key for devbox stored as secret: DEPLOY_SSH_KEY
+  #   3. Target machine accessible via Tailscale
+  #
   # deploy:
   #   name: Deploy to Devbox
   #   runs-on: ubuntu-latest
-  #   needs: ci
-  #   if: github.ref == 'refs/heads/main'
+  #   needs: publish
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
   #   steps:
-  #     - name: Deploy via SSH/Tailscale
-  #       run: echo "TODO: implement deployment"
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Install Nix
+  #       uses: DeterminateSystems/determinate-nix-action@v3
+  #
+  #     - name: Setup Tailscale
+  #       uses: tailscale/github-action@v2
+  #       with:
+  #         authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+  #
+  #     - name: Setup SSH key
+  #       run: |
+  #         mkdir -p ~/.ssh
+  #         echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+  #         chmod 600 ~/.ssh/id_ed25519
+  #         ssh-keyscan -H devbox.tailnet >> ~/.ssh/known_hosts
+  #
+  #     - name: Deploy to devbox
+  #       run: |
+  #         # Option A: Build locally and push to target
+  #         nixos-rebuild switch \
+  #           --flake .#devbox \
+  #           --target-host devuser@devbox.tailnet \
+  #           --use-remote-sudo
+  #
+  #         # Option B: SSH and pull from FlakeHub on target
+  #         # ssh devuser@devbox.tailnet "sudo nixos-rebuild switch --flake flakehub:ColeB1722/nix-devbox#devbox"

@@ -25,6 +25,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # NixOS-WSL for running NixOS on Windows Subsystem for Linux
+    # Provides WSL-specific modules and configuration
+    # Using 2405.x release for compatibility with nixos-24.05
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL/2405.5.4";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Pre-commit hooks for code quality
     # Provides sandboxed hook execution via `nix flake check`
     # Note: Uses its own nixpkgs to avoid version incompatibility with 24.05
@@ -39,6 +47,7 @@
       self,
       nixpkgs,
       home-manager,
+      nixos-wsl,
       git-hooks,
       systems,
       ...
@@ -144,7 +153,7 @@
       # NixOS system configurations
       # Each host gets its own configuration under nixosConfigurations.<hostname>
       nixosConfigurations = {
-        # Primary devbox configuration
+        # Primary devbox configuration (bare metal / VM)
         devbox = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
 
@@ -156,6 +165,37 @@
           modules = [
             # Machine-specific configuration
             ./hosts/devbox
+
+            # Home Manager as NixOS module for atomic system+user updates
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true; # Use system nixpkgs
+                useUserPackages = true; # Install to /etc/profiles
+                extraSpecialArgs = {
+                  inherit inputs;
+                };
+              };
+            }
+          ];
+        };
+
+        # WSL configuration (Windows Subsystem for Linux)
+        # Use with: sudo nixos-rebuild switch --flake .#devbox-wsl
+        devbox-wsl = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+
+          # Pass flake inputs to all modules via specialArgs
+          specialArgs = {
+            inherit inputs;
+          };
+
+          modules = [
+            # NixOS-WSL base module (MUST be first)
+            nixos-wsl.nixosModules.default
+
+            # WSL-specific host configuration
+            ./hosts/devbox-wsl
 
             # Home Manager as NixOS module for atomic system+user updates
             home-manager.nixosModules.home-manager

@@ -18,16 +18,18 @@ justfile                     # Task runner (just) for common commands
 .github/workflows/ci.yml     # GitHub Actions CI workflow
 
 hosts/
-└── devbox/
-    ├── default.nix          # Machine-specific configuration
-    └── hardware-configuration.nix  # Generated hardware config (gitignored)
+├── devbox/                  # Bare-metal/VM configuration
+│   ├── default.nix          # Machine-specific configuration
+│   └── hardware-configuration.nix  # Generated hardware config (gitignored)
+└── devbox-wsl/              # WSL2 configuration
+    └── default.nix          # WSL-specific settings
 
 modules/
 ├── core/
 │   └── default.nix          # Base system settings (locale, timezone, nix)
 ├── networking/
-│   ├── default.nix          # Firewall configuration
-│   └── tailscale.nix        # Tailscale VPN service
+│   ├── default.nix          # Firewall configuration (bare-metal only)
+│   └── tailscale.nix        # Tailscale VPN service (bare-metal only)
 ├── security/
 │   └── ssh.nix              # SSH hardening
 └── user/
@@ -68,6 +70,24 @@ nixos-rebuild build --flake .#devbox         # Build without deploying
 sudo nixos-rebuild switch --flake .#devbox   # Deploy to current machine
 nix flake update                             # Update flake inputs
 ```
+
+## WSL Deployment
+
+For deploying to Windows Subsystem for Linux, see `specs/003-wsl-support/quickstart.md`.
+
+Quick reference:
+```bash
+# Inside WSL after cloning the repo
+sudo nixos-rebuild switch --flake .#devbox-wsl
+
+# Or pull from FlakeHub
+sudo nixos-rebuild switch --flake flakehub:coal-bap/nix-devbox#devbox-wsl
+```
+
+Key differences from bare-metal:
+- No hardware-configuration.nix needed
+- Tailscale runs on Windows host, not in WSL
+- SSH is exposed directly (Windows + Tailscale handles filtering)
 
 ## Code Style
 

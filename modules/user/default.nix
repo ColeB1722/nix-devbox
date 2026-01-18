@@ -3,96 +3,45 @@
 # This module creates user accounts for coal (primary admin) and violino (secondary user)
 # and integrates Home Manager for per-user environment management.
 #
-# SSH keys are injected via environment variables at build time:
-#   - SSH_KEY_COAL: coal's SSH public key
-#   - SSH_KEY_VIOLINO: violino's SSH public key
-#
-# If env vars are not set, placeholder keys are used (build succeeds, SSH fails at runtime).
-# Set NIX_STRICT_KEYS=true to fail the build if keys are missing.
+# SSH public keys are hardcoded directly in this file. This is safe because:
+#   - Public keys are designed to be shared (that's why they're called "public")
+#   - They cannot be used to impersonate you or gain access
+#   - This is standard practice in NixOS configurations
 #
 # Constitution alignment:
 #   - Principle I: Declarative Configuration (users managed in Nix)
 #   - Principle III: Security by Default (SSH keys required, password auth disabled)
 #   - Principle V: Documentation as Code (inline comments)
 #
-# Feature 006-multi-user-support: Multi-user support with environment variable key injection
+# Feature 006-multi-user-support: Multi-user support with hardcoded SSH public keys
 
 {
   config,
-  lib,
   pkgs,
   ...
 }:
 
 let
   # ─────────────────────────────────────────────────────────────────────────────
-  # SSH Key Environment Variable Injection
+  # SSH Public Keys
   # ─────────────────────────────────────────────────────────────────────────────
-  # Keys are read from environment variables at build time.
-  # This allows the repo to be public while keeping keys private.
-  #
-  # Usage:
-  #   export SSH_KEY_COAL="ssh-ed25519 AAAA..."
-  #   export SSH_KEY_VIOLINO="ssh-ed25519 AAAA..."
-  #   nix flake check
+  # Public keys are safe to commit - they're designed to be shared publicly.
+  # Only private keys must be kept secret.
 
-  # Placeholder key used when env var is not set
-  # This allows the build to succeed (for FlakeHub, CI) but SSH login will fail
-  placeholderKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderKeySSHLoginWillFail";
+  # coal's SSH public key
+  coalKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMYEMoAMxPAGD4AzBPCAYV6UiHrAeMm/AJIGXKCikkuc";
 
-  # Read SSH keys from environment variables
-  sshKeyCoal = builtins.getEnv "SSH_KEY_COAL";
-  sshKeyViolino = builtins.getEnv "SSH_KEY_VIOLINO";
-
-  # Check if strict mode is enabled (fail build if keys missing)
-  strictKeys = (builtins.getEnv "NIX_STRICT_KEYS") == "true";
-
-  # Helper to get key with fallback to placeholder (with warning)
-  getKey =
-    name: envValue:
-    if envValue != "" then
-      envValue
-    else
-      lib.warn ''
-        [006-multi-user] SSH key for ${name} not set (${
-          if name == "coal" then "SSH_KEY_COAL" else "SSH_KEY_VIOLINO"
-        } env var is empty).
-        Using placeholder key - SSH login will fail at runtime.
-        Set the environment variable before rebuilding, or set NIX_STRICT_KEYS=true to fail the build.
-      '' placeholderKey;
-
-  # Final SSH keys (either from env or placeholder with warning)
-  coalKey = getKey "coal" sshKeyCoal;
-  violinoKey = getKey "violino" sshKeyViolino;
-
-  # Check if keys are placeholders (for assertions)
-  isPlaceholder = key: lib.hasPrefix "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholder" key;
+  # violino's SSH public key
+  # TODO: Replace with violino's actual public key
+  violinoKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderReplaceWithViolinoKey";
 
 in
 {
   # ─────────────────────────────────────────────────────────────────────────────
-  # Strict Mode Assertions
+  # Security Assertions
   # ─────────────────────────────────────────────────────────────────────────────
-  # When NIX_STRICT_KEYS=true, fail the build if any SSH key is missing.
-  # This is useful for production deployments.
 
   assertions = [
-    {
-      assertion = !strictKeys || !isPlaceholder coalKey;
-      message = ''
-        STRICT MODE: SSH key for coal is not set.
-        Set SSH_KEY_COAL environment variable with coal's public key.
-        Example: export SSH_KEY_COAL="ssh-ed25519 AAAA... coal@machine"
-      '';
-    }
-    {
-      assertion = !strictKeys || !isPlaceholder violinoKey;
-      message = ''
-        STRICT MODE: SSH key for violino is not set.
-        Set SSH_KEY_VIOLINO environment variable with violino's public key.
-        Example: export SSH_KEY_VIOLINO="ssh-ed25519 AAAA... violino@machine"
-      '';
-    }
     # Security: violino must NOT be in wheel group (no sudo access)
     {
       assertion = !(builtins.elem "wheel" config.users.users.violino.extraGroups);

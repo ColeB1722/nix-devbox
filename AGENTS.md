@@ -36,7 +36,7 @@ modules/
 ├── security/
 │   └── ssh.nix              # SSH hardening
 ├── user/
-│   └── default.nix          # Multi-user accounts (coal, violino) with env var SSH keys
+│   └── default.nix          # Multi-user accounts (coal, violino) with hardcoded SSH public keys
 ├── shell/
 │   └── default.nix          # Fish shell system configuration (feature 005)
 ├── docker/
@@ -49,8 +49,6 @@ home/
 ├── coal.nix                 # coal's personal config (admin user, uid=1000)
 ├── violino.nix              # violino's personal config (dev user, uid=1001)
 └── default.nix              # Entry point (imports coal.nix for backwards compat)
-
-.env.example                 # Template for SSH key environment variables
 
 specs/                       # Feature specifications (speckit)
 ```

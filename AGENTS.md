@@ -1,11 +1,13 @@
 # nix-devbox Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-01-17
+Auto-generated from all feature plans. Last updated: 2026-01-18
 
 ## Active Technologies
 - Nix (flakes format, NixOS 24.05+) + git-hooks.nix (cachix), nixfmt, statix, deadnix (002-testing-infrastructure)
 - N/A (configuration files only) (002-testing-infrastructure)
 - Nix (flakes format, NixOS 25.05) + Home Manager 25.05, nixpkgs 25.05, existing modules from feature 001 (005-devtools-config)
+- Nix (flakes format, NixOS 25.05) + NixOS modules, Home Manager 25.05, existing modules from features 001/005 (006-multi-user-support)
+- N/A (filesystem-based user home directories) (006-multi-user-support)
 
 - Nix (flakes format, NixOS 24.05+) + NixOS modules, Home Manager, Tailscale (001-devbox-skeleton)
 
@@ -34,16 +36,21 @@ modules/
 ├── security/
 │   └── ssh.nix              # SSH hardening
 ├── user/
-│   └── default.nix          # User account and Home Manager
+│   └── default.nix          # Multi-user accounts (coal, violino) with env var SSH keys
 ├── shell/
 │   └── default.nix          # Fish shell system configuration (feature 005)
 ├── docker/
 │   └── default.nix          # Docker container runtime (feature 005)
 └── services/
-    └── code-server.nix      # Browser-based VS Code (feature 005)
+    └── code-server.nix      # Per-user code-server instances (coal:8080, violino:8081)
 
 home/
-└── default.nix              # Home Manager user environment
+├── common.nix               # Shared Home Manager config (all users inherit this)
+├── coal.nix                 # coal's personal config (admin user, uid=1000)
+├── violino.nix              # violino's personal config (dev user, uid=1001)
+└── default.nix              # Entry point (imports coal.nix for backwards compat)
+
+.env.example                 # Template for SSH key environment variables
 
 specs/                       # Feature specifications (speckit)
 ```
@@ -134,11 +141,32 @@ This repo is designed to be safely public:
 - Pre-commit hooks prevent accidental secret commits
 - Hardware-specific configs are gitignored
 
+## Service Access
+
+### code-server (Browser-based VS Code)
+
+Access is controlled by Tailscale ACLs defined in `homelab-iac/tailscale/main.tf`.
+
+| User | Port | Access URL |
+|------|------|------------|
+| coal (admin) | 8080 | `http://devbox:8080` |
+| violino (user) | 8081 | `http://devbox:8081` |
+
+**Access model:**
+- coal (admin): Can access both 8080 and 8081 (for troubleshooting)
+- violino (user): Can only access 8081 (their own instance)
+
+**Requirements:**
+- Device must be on the Tailscale network
+- User must have appropriate ACL permissions in homelab-iac
+
+**To modify access permissions:** Edit `homelab-iac/tailscale/main.tf`
+
 ## Recent Changes
+- 006-multi-user-support: Added Nix (flakes format, NixOS 25.05) + NixOS modules, Home Manager 25.05, existing modules from features 001/005
 - 005-devtools-config: Added Nix (flakes format, NixOS 25.05) + Home Manager 25.05, nixpkgs 25.05, existing modules from feature 001
 - 002-testing-infrastructure: Added Nix (flakes format, NixOS 24.05+) + git-hooks.nix (cachix), nixfmt, statix, deadnix
 
-- 001-devbox-skeleton: Implemented complete NixOS flake structure with modular architecture
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

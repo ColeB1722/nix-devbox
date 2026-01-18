@@ -91,7 +91,9 @@
               home-manager = {
                 useGlobalPkgs = true; # Use system nixpkgs
                 useUserPackages = true; # Install to /etc/profiles
-                extraSpecialArgs = { inherit inputs; };
+                extraSpecialArgs = {
+                  inherit inputs;
+                };
               };
             }
           ];

@@ -4,14 +4,13 @@
 # - Push to main or release/* branches
 # - PRs targeting main or release/* branches
 #
-# All jobs run the full validation pipeline:
-# format check → flake check → build
+# Pipeline: format check → flake check → build (single job for efficiency)
 #
 # Feature branches get no CI until they open a PR.
 # Pre-commit hooks handle local validation.
 #
-# Uses DeterminateSystems Nix installer for modern flake support
-# and magic-nix-cache for faster builds.
+# Uses DeterminateSystems determinate-nix-action for modern flake support
+# with integrated caching.
 
 name: CI
 
@@ -25,59 +24,36 @@ on:
       - main
       - 'release/**'
 
+# Required for FlakeHub Cache authentication
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
-  format:
-    name: Format Check
+  ci:
+    name: Format, Check, Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+      - name: Install Nix with caching
+        uses: DeterminateSystems/determinate-nix-action@v3
 
       - name: Check formatting
         run: nix fmt -- --check .
 
-  check:
-    name: Flake Check
-    runs-on: ubuntu-latest
-    needs: format
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-
-      - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
-
       - name: Run flake check
         run: nix flake check
 
-  build:
-    name: Build NixOS Configuration
-    runs-on: ubuntu-latest
-    needs: check
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-
-      - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
-
-      - name: Build devbox configuration
+      - name: Build NixOS configuration
         run: nix build .#nixosConfigurations.devbox.config.system.build.toplevel
 
   # Future: deploy job
   # deploy:
   #   name: Deploy to Devbox
   #   runs-on: ubuntu-latest
-  #   needs: build
+  #   needs: ci
   #   if: github.ref == 'refs/heads/main'
   #   steps:
   #     - name: Deploy via SSH/Tailscale

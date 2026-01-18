@@ -67,7 +67,7 @@ modules/
 
 home/
 ├── common.nix               # NEW: Shared Home Manager config (base tools)
-├── cole.nix                 # NEW: Cole's personal config (git identity, etc.)
+├── coal.nix                 # NEW: Cole's personal config (git identity, etc.)
 ├── violino.nix              # NEW: Violino's personal config
 └── default.nix              # REFACTOR: Entry point that imports per-user configs
 

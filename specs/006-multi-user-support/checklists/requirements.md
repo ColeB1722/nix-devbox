@@ -35,5 +35,5 @@
 - Spec is ready for `/speckit.plan`
 - **Clarification session completed (2026-01-18):**
   - SSH key management: Environment variables at build time (CI publish job must NOT have key secrets)
-  - code-server: Per-user instances on separate ports (Cole: 8080, Violino: 8081)
+  - code-server: Per-user instances on separate ports (coal: 8080, violino: 8081)
 - SSH keys for Violino will need to be obtained before deployment

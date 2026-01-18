@@ -14,20 +14,20 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Cole Accesses Devbox as Primary Admin (Priority: P1)
+### User Story 1 - coal accesses Devbox as Primary Admin (Priority: P1)
 
-Cole (ColeB1722@github) is the primary administrator of the devbox. He needs full access to the system including sudo privileges, all development tools, and the ability to manage the system. He connects via Tailscale SSH using his existing SSH key.
+coal (ColeB1722@github) is the primary administrator of the devbox. He needs full access to the system including sudo privileges, all development tools, and the ability to manage the system. He connects via Tailscale SSH using his existing SSH key.
 
-**Why this priority**: Cole is the primary user and system administrator. The devbox must be fully functional for the admin before adding secondary users.
+**Why this priority**: coal is the primary user and system administrator. The devbox must be fully functional for the admin before adding secondary users.
 
-**Independent Test**: Cole can SSH into the devbox, run sudo commands, use all development tools (fish, docker, code-server), and manage system configuration.
+**Independent Test**: coal can SSH into the devbox, run sudo commands, use all development tools (fish, docker, code-server), and manage system configuration.
 
 **Acceptance Scenarios**:
 
-1. **Given** the devbox is deployed, **When** Cole connects via SSH using his authorized key, **Then** he is logged into his user account with full shell access
-2. **Given** Cole is logged in, **When** he runs a sudo command, **Then** the command executes without password prompt
-3. **Given** Cole is logged in, **When** he accesses docker, **Then** he can run containers without sudo
-4. **Given** Cole is logged in, **When** he opens code-server in browser, **Then** he has access to his home directory and projects
+1. **Given** the devbox is deployed, **When** coal connects via SSH using his authorized key, **Then** he is logged into his user account with full shell access
+2. **Given** coal is logged in, **When** he runs a sudo command, **Then** the command executes without password prompt
+3. **Given** coal is logged in, **When** he accesses docker, **Then** he can run containers without sudo
+4. **Given** coal is logged in, **When** he opens code-server in browser, **Then** he has access to his home directory and projects
 
 ---
 
@@ -98,7 +98,7 @@ Each user has their own Home Manager configuration defining their personal envir
 - **FR-001**: System MUST support multiple user accounts with separate home directories
 - **FR-002**: System MUST allow each user to authenticate via their own SSH public key, injected via environment variables at build time (not hardcoded in repo)
 - **FR-003**: System MUST provide user isolation via standard Unix permissions
-- **FR-004**: System MUST allow the primary admin user (Cole) sudo access without password
+- **FR-004**: System MUST allow the primary admin user (coal) sudo access without password
 - **FR-005**: System MUST provide each user with the same base development toolset (fish, fzf, bat, eza, etc.)
 - **FR-006**: System MUST support per-user Home Manager configurations
 - **FR-007**: System MUST allow both users to access the shared docker daemon

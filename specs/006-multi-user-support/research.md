@@ -19,7 +19,7 @@
 **Pattern**:
 ```nix
 let
-  coleKey = builtins.getEnv "SSH_KEY_COLE";
+  coalKey = builtins.getEnv "SSH_KEY_COAL";
   violinoKey = builtins.getEnv "SSH_KEY_VIOLINO";
   
   # Placeholder used when env var not set - allows FlakeHub publish to succeed
@@ -27,8 +27,8 @@ let
   placeholder = "ssh-ed25519 PLACEHOLDER_KEY_NOT_SET_check_env_vars";
 in
 {
-  users.users.cole.openssh.authorizedKeys.keys = [
-    (if coleKey != "" then coleKey else placeholder)
+  users.users.coal.openssh.authorizedKeys.keys = [
+    (if coalKey != "" then coalKey else placeholder)
   ];
 }
 ```
@@ -68,19 +68,19 @@ in
 **Pattern**:
 ```nix
 # In modules/user/default.nix or host config
-home-manager.users.cole = import ../../home/cole.nix;
+home-manager.users.coal = import ../../home/coal.nix;
 home-manager.users.violino = import ../../home/violino.nix;
 
-# home/cole.nix
+# home/coal.nix
 { pkgs, ... }: {
   imports = [ ./common.nix ];
   
-  home.username = "cole";
-  home.homeDirectory = "/home/cole";
+  home.username = "coal";
+  home.homeDirectory = "/home/coal";
   
   programs.git = {
-    userName = "Cole Bateman";
-    userEmail = "cole@example.com";
+    userName = "coal-bap";
+    userEmail = "coal@example.com";
   };
 }
 
@@ -121,9 +121,9 @@ home-manager.users.violino = import ../../home/violino.nix;
 # 3. Create a custom module with user parameter
 
 # Recommended: Custom module with per-user services
-services.code-server-cole = {
+services.code-server-coal = {
   enable = true;
-  user = "cole";
+  user = "coal";
   port = 8080;
   host = "127.0.0.1";
 };
@@ -144,7 +144,7 @@ Since NixOS `services.code-server` is single-instance, we'll either:
 **Port Assignments**:
 | User | code-server Port | Notes |
 |------|------------------|-------|
-| Cole | 8080 | Admin user, full Tailscale access |
+| coal | 8080 | Admin user, full Tailscale access |
 | Violino | 8081 | SSH-only per Tailscale ACL (may not use code-server) |
 
 **Note**: Per Tailscale ACL, Violino only has SSH access (port 22). Her code-server instance (8081) would only be accessible if ACL is updated. Consider making her code-server optional.
@@ -170,10 +170,10 @@ Since NixOS `services.code-server` is single-instance, we'll either:
 **Pattern**:
 ```nix
 users.users = {
-  cole = {
+  coal = {
     isNormalUser = true;
     uid = 1000;
-    description = "Cole Bateman";
+    description = "coal-bap";
     extraGroups = [ "wheel" "docker" "networkmanager" ];
     shell = pkgs.fish;
     openssh.authorizedKeys.keys = [ /* from env var */ ];
@@ -193,7 +193,7 @@ users.users = {
 **UID Assignments**:
 | User | UID | Groups | Sudo |
 |------|-----|--------|------|
-| cole | 1000 | wheel, docker, networkmanager | Yes (passwordless) |
+| coal | 1000 | wheel, docker, networkmanager | Yes (passwordless) |
 | violino | 1001 | docker | No |
 
 ---
@@ -214,8 +214,8 @@ users.users = {
 
 assertions = lib.optionals (builtins.getEnv "NIX_DEPLOY_MODE" == "true") [
   {
-    assertion = (builtins.length config.users.users.cole.openssh.authorizedKeys.keys) > 0;
-    message = "Cole's SSH key not configured. Set SSH_KEY_COLE environment variable.";
+    assertion = (builtins.length config.users.users.coal.openssh.authorizedKeys.keys) > 0;
+    message = "Cole's SSH key not configured. Set SSH_KEY_COAL environment variable.";
   }
   {
     assertion = (builtins.length config.users.users.violino.openssh.authorizedKeys.keys) > 0;

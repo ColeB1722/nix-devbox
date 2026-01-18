@@ -27,7 +27,7 @@ This is a NixOS configuration project:
 **Purpose**: Prepare the codebase for multi-user refactoring
 
 - [ ] T001 Create `home/common.nix` by extracting shared config from `home/default.nix`
-- [ ] T002 [P] Add `.env.example` with SSH_KEY_COLE and SSH_KEY_VIOLINO placeholders at repo root
+- [ ] T002 [P] Add `.env.example` with SSH_KEY_COAL and SSH_KEY_VIOLINO placeholders at repo root
 - [ ] T003 [P] Update `.gitignore` to exclude `.env` file at repo root
 
 ---
@@ -47,22 +47,22 @@ This is a NixOS configuration project:
 
 ---
 
-## Phase 3: User Story 1 - Cole Accesses Devbox as Primary Admin (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - coal accesses Devbox as Primary Admin (Priority: P1) 🎯 MVP
 
-**Goal**: Cole can SSH into devbox with admin privileges, use all dev tools, and access code-server
+**Goal**: coal can SSH into devbox with admin privileges, use all dev tools, and access code-server
 
-**Independent Test**: SSH as Cole, run `sudo whoami`, `docker ps`, access code-server at localhost:8080
+**Independent Test**: SSH as coal, run `sudo whoami`, `docker ps`, access code-server at localhost:8080
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Define Cole's user account in `modules/user/default.nix` (uid=1000, wheel group, docker group)
-- [ ] T009 [US1] Create `home/cole.nix` with Cole's personal config (imports common.nix, git identity)
-- [ ] T010 [US1] Wire Cole's Home Manager config in `modules/user/default.nix` via `home-manager.users.cole`
-- [ ] T011 [US1] Update `modules/services/code-server.nix` to run as user `cole` on port 8080
-- [ ] T012 [US1] Verify Cole's account works with `nix flake check` (with SSH_KEY_COLE set)
-- [ ] T013 [US1] Document Cole's setup in inline comments in `modules/user/default.nix`
+- [ ] T008 [US1] Define coal's user account in `modules/user/default.nix` (uid=1000, wheel group, docker group)
+- [ ] T009 [US1] Create `home/coal.nix` with coal's personal config (imports common.nix, git identity)
+- [ ] T010 [US1] Wire coal's Home Manager config in `modules/user/default.nix` via `home-manager.users.coal`
+- [ ] T011 [US1] Update `modules/services/code-server.nix` to run as user `coal` on port 8080
+- [ ] T012 [US1] Verify coal's account works with `nix flake check` (with SSH_KEY_COAL set)
+- [ ] T013 [US1] Document coal's setup in inline comments in `modules/user/default.nix`
 
-**Checkpoint**: User Story 1 complete - Cole has full admin access with dev tools
+**Checkpoint**: User Story 1 complete - coal has full admin access with dev tools
 
 ---
 
@@ -88,13 +88,13 @@ This is a NixOS configuration project:
 
 **Goal**: Both users have proper isolation via Unix permissions; shared resources (docker) work for both
 
-**Independent Test**: Verify Cole cannot read Violino's home; both can run `docker ps`
+**Independent Test**: Verify coal cannot read Violino's home; both can run `docker ps`
 
 ### Implementation for User Story 3
 
 - [ ] T019 [US3] Configure home directory permissions (700) in `modules/user/default.nix`
 - [ ] T020 [US3] Verify both users are in docker group in `modules/user/default.nix`
-- [ ] T021 [US3] Verify only Cole is in wheel group (sudo access) in `modules/user/default.nix`
+- [ ] T021 [US3] Verify only coal is in wheel group (sudo access) in `modules/user/default.nix`
 - [ ] T022 [US3] Add assertion that Violino is NOT in wheel group in `modules/user/default.nix`
 - [ ] T023 [US3] Run `nix flake check` to validate all assertions pass
 
@@ -106,13 +106,13 @@ This is a NixOS configuration project:
 
 **Goal**: Each user has personalized environment (shell aliases, git config) without conflicts
 
-**Independent Test**: Verify Cole's git user.name differs from Violino's; each has own fish config
+**Independent Test**: Verify coal's git user.name differs from Violino's; each has own fish config
 
 ### Implementation for User Story 4
 
-- [ ] T024 [US4] Configure Cole's git identity (userName, userEmail) in `home/cole.nix`
+- [ ] T024 [US4] Configure coal's git identity (userName, userEmail) in `home/coal.nix`
 - [ ] T025 [P] [US4] Configure Violino's git identity (userName, userEmail) in `home/violino.nix`
-- [ ] T026 [US4] Add any Cole-specific shell abbreviations in `home/cole.nix` (if different from common)
+- [ ] T026 [US4] Add any coal-specific shell abbreviations in `home/coal.nix` (if different from common)
 - [ ] T027 [P] [US4] Add any Violino-specific shell abbreviations in `home/violino.nix` (if different from common)
 - [ ] T028 [US4] Verify `nix flake check` passes with both user configs
 
@@ -124,12 +124,12 @@ This is a NixOS configuration project:
 
 **Goal**: Each user has their own code-server instance on dedicated ports
 
-**Independent Test**: Cole accesses code-server on 8080; Violino on 8081
+**Independent Test**: coal accesses code-server on 8080; Violino on 8081
 
 ### Implementation
 
 - [ ] T029 Refactor `modules/services/code-server.nix` to support multiple instances
-- [ ] T030 [P] Configure Cole's code-server instance (port 8080) in `modules/services/code-server.nix`
+- [ ] T030 [P] Configure coal's code-server instance (port 8080) in `modules/services/code-server.nix`
 - [ ] T031 [P] Configure Violino's code-server instance (port 8081) in `modules/services/code-server.nix`
 - [ ] T032 Maintain Tailscale assertion for code-server access in `modules/services/code-server.nix`
 - [ ] T033 Verify both code-server services with `nix flake check`
@@ -145,7 +145,7 @@ This is a NixOS configuration project:
 - [ ] T034 Verify `hosts/devbox/default.nix` imports work with refactored user module
 - [ ] T035 [P] Verify `hosts/devbox-wsl/default.nix` imports work with refactored user module
 - [ ] T036 Run `nix flake check` for both configurations
-- [ ] T037 Update `AGENTS.md` with new file structure (home/common.nix, home/cole.nix, home/violino.nix)
+- [ ] T037 Update `AGENTS.md` with new file structure (home/common.nix, home/coal.nix, home/violino.nix)
 
 ---
 
@@ -201,11 +201,11 @@ This is a NixOS configuration project:
 
 ```bash
 # These tasks modify different files and can run in parallel:
-Task: "Configure Cole's git identity in home/cole.nix"
+Task: "Configure coal's git identity in home/coal.nix"
 Task: "Configure Violino's git identity in home/violino.nix"
 
 # These also can run in parallel:
-Task: "Add Cole-specific shell abbreviations in home/cole.nix"
+Task: "Add coal-specific shell abbreviations in home/coal.nix"
 Task: "Add Violino-specific shell abbreviations in home/violino.nix"
 ```
 
@@ -218,13 +218,13 @@ Task: "Add Violino-specific shell abbreviations in home/violino.nix"
 1. Complete Phase 1: Setup
 2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
 3. Complete Phase 3: User Story 1
-4. **STOP and VALIDATE**: Cole can SSH, sudo, docker, code-server
+4. **STOP and VALIDATE**: coal can SSH, sudo, docker, code-server
 5. Deploy/demo if ready
 
 ### Incremental Delivery
 
 1. Complete Setup + Foundational → Foundation ready
-2. Add User Story 1 → Cole works → MVP!
+2. Add User Story 1 → coal works → MVP!
 3. Add User Story 2 → Violino works
 4. Add User Story 3 → Isolation verified
 5. Add User Story 4 → Per-user configs
@@ -264,4 +264,4 @@ Execute phases sequentially in priority order:
 - [Story] label maps task to specific user story for traceability
 - Verify `nix flake check` passes after each phase
 - Commit after each task or logical group
-- Use SSH_KEY_COLE and SSH_KEY_VIOLINO env vars for testing
+- Use SSH_KEY_COAL and SSH_KEY_VIOLINO env vars for testing

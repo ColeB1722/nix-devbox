@@ -11,13 +11,13 @@ Represents a system user on the NixOS devbox.
 
 | Attribute | Type | Description | Example |
 |-----------|------|-------------|---------|
-| username | string | Unix username | `"cole"` |
+| username | string | Unix username | `"coal"` |
 | uid | integer | Unique user ID | `1000` |
-| description | string | Human-readable name | `"Cole Bateman"` |
+| description | string | Human-readable name | `"coal-bap"` |
 | isNormalUser | boolean | Non-system user flag | `true` |
 | shell | package | Default shell | `pkgs.fish` |
 | extraGroups | list[string] | Group memberships | `["wheel", "docker"]` |
-| homeDirectory | string | Home directory path | `"/home/cole"` |
+| homeDirectory | string | Home directory path | `"/home/coal"` |
 | sshKeys | list[string] | SSH authorized keys | `["ssh-ed25519 AAAA..."]` |
 | isAdmin | boolean (derived) | Has sudo access | `true` if "wheel" in extraGroups |
 
@@ -35,8 +35,8 @@ Per-user environment settings managed by Home Manager.
 
 | Attribute | Type | Description | Example |
 |-----------|------|-------------|---------|
-| username | string | Must match User Account username | `"cole"` |
-| homeDirectory | string | Must match User Account | `"/home/cole"` |
+| username | string | Must match User Account username | `"coal"` |
+| homeDirectory | string | Must match User Account | `"/home/coal"` |
 | stateVersion | string | Home Manager state version | `"24.05"` |
 | packages | list[package] | User-specific packages | `[ pkgs.htop ]` |
 | programs | attrset | Program configurations | `{ git = { ... }; }` |
@@ -51,9 +51,9 @@ System groups that grant access to shared resources.
 
 | Group | Purpose | Members |
 |-------|---------|---------|
-| wheel | Sudo access | cole |
+| wheel | Sudo access | coal |
 | docker | Docker daemon access | cole, violino |
-| networkmanager | Network configuration | cole |
+| networkmanager | Network configuration | coal |
 
 ### code-server Instance
 
@@ -61,16 +61,16 @@ Per-user browser IDE service.
 
 | Attribute | Type | Description | Example |
 |-----------|------|-------------|---------|
-| user | string | Unix user to run as | `"cole"` |
+| user | string | Unix user to run as | `"coal"` |
 | port | integer | HTTP port | `8080` |
 | host | string | Bind address | `"127.0.0.1"` |
 | auth | string | Authentication mode | `"none"` (Tailscale provides auth) |
-| workingDirectory | string | Default workspace | `/home/cole` |
+| workingDirectory | string | Default workspace | `/home/coal` |
 
 **Instances**:
 | Instance | User | Port | Active |
 |----------|------|------|--------|
-| code-server-cole | cole | 8080 | Yes |
+| code-server-coal | coal | 8080 | Yes |
 | code-server-violino | violino | 8081 | Yes (but Tailscale ACL may block) |
 
 ## Configuration Structure
@@ -81,7 +81,7 @@ Required for deployment builds (not for FlakeHub publish):
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `SSH_KEY_COLE` | Cole's SSH public key | `ssh-ed25519 AAAA...` |
+| `SSH_KEY_COAL` | Cole's SSH public key | `ssh-ed25519 AAAA...` |
 | `SSH_KEY_VIOLINO` | Violino's SSH public key | `ssh-ed25519 AAAA...` |
 
 ### File Structure
@@ -102,10 +102,10 @@ home/
 │   ├── programs.eza    # Modern ls
 │   └── programs.*      # Other shared programs
 │
-├── cole.nix            # Cole's personal config
+├── coal.nix            # Cole's personal config
 │   ├── imports = [ ./common.nix ]
-│   ├── home.username = "cole"
-│   ├── programs.git.userName = "Cole Bateman"
+│   ├── home.username = "coal"
+│   ├── programs.git.userName = "coal-bap"
 │   └── [personal customizations]
 │
 └── violino.nix         # Violino's personal config
@@ -169,7 +169,7 @@ home/
 
 1. Unique usernames across all defined users
 2. Unique UIDs (no collisions)
-3. Admin user (cole) must be in wheel group
+3. Admin user (coal) must be in wheel group
 4. Non-admin user (violino) must NOT be in wheel group
 
 ### code-server Validation

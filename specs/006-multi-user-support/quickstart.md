@@ -260,12 +260,13 @@ This will cause an assertion failure if any key is missing, preventing accidenta
 
 1. Check service status:
    ```bash
-   systemctl status code-server
+   systemctl status code-server-coal
+   systemctl status code-server-violino
    ```
 
 2. Check port binding:
    ```bash
-   ss -tlnp | grep 8080
+   ss -tlnp | grep -E '8080|8081'
    ```
 
 3. Verify Tailscale is running:

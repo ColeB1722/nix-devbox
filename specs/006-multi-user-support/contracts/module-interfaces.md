@@ -12,14 +12,14 @@ Define multiple user accounts with SSH key injection from environment variables.
 
 ```nix
 # Input: Environment variables (read at evaluation time)
-# SSH_KEY_COLE    - Cole's SSH public key
+# SSH_KEY_COAL    - coal's SSH public key
 # SSH_KEY_VIOLINO - Violino's SSH public key
 
 # Output: NixOS configuration
 {
-  users.users.cole = { ... };
+  users.users.coal = { ... };
   users.users.violino = { ... };
-  home-manager.users.cole = import ../../home/cole.nix;
+  home-manager.users.coal = import ../../home/coal.nix;
   home-manager.users.violino = import ../../home/violino.nix;
   security.sudo.wheelNeedsPassword = false;
   programs._1password.enable = true;
@@ -31,7 +31,7 @@ Define multiple user accounts with SSH key injection from environment variables.
 ```nix
 let
   # Read keys from environment, use placeholder if not set
-  coleKeyRaw = builtins.getEnv "SSH_KEY_COLE";
+  coalKeyRaw = builtins.getEnv "SSH_KEY_COAL";
   violinoKeyRaw = builtins.getEnv "SSH_KEY_VIOLINO";
   
   # Placeholder allows builds to succeed for FlakeHub publish
@@ -39,16 +39,16 @@ let
   placeholder = "ssh-ed25519 PLACEHOLDER_KEY_NOT_SET_check_SSH_KEY_envvar";
   
   # Use real key if set, otherwise placeholder with warning
-  coleKey = if coleKeyRaw != "" 
-    then coleKeyRaw 
-    else lib.warn "SSH_KEY_COLE not set - using placeholder (deploy will fail)" placeholder;
+  coalKey = if coalKeyRaw != "" 
+    then coalKeyRaw 
+    else lib.warn "SSH_KEY_COAL not set - using placeholder (deploy will fail)" placeholder;
   
   violinoKey = if violinoKeyRaw != "" 
     then violinoKeyRaw 
     else lib.warn "SSH_KEY_VIOLINO not set - using placeholder (deploy will fail)" placeholder;
 in
 {
-  users.users.cole.openssh.authorizedKeys.keys = [ coleKey ];
+  users.users.coal.openssh.authorizedKeys.keys = [ coalKey ];
   users.users.violino.openssh.authorizedKeys.keys = [ violinoKey ];
 }
 ```
@@ -60,8 +60,8 @@ For strict validation during actual deploys, an optional assertion can be added:
 ```nix
 assertions = lib.optionals (builtins.getEnv "NIX_STRICT_KEYS" == "true") [
   {
-    assertion = builtins.getEnv "SSH_KEY_COLE" != "";
-    message = "SSH_KEY_COLE must be set for deployment. Export the env var or use .env file.";
+    assertion = builtins.getEnv "SSH_KEY_COAL" != "";
+    message = "SSH_KEY_COAL must be set for deployment. Export the env var or use .env file.";
   }
   {
     assertion = builtins.getEnv "SSH_KEY_VIOLINO" != "";
@@ -143,10 +143,10 @@ Shared Home Manager configuration imported by all user-specific configs.
 
 ---
 
-## Module: home/cole.nix
+## Module: home/coal.nix
 
 ### Purpose
-Cole's personal Home Manager configuration.
+coal's personal Home Manager configuration.
 
 ### Interface
 
@@ -154,17 +154,17 @@ Cole's personal Home Manager configuration.
 # Input: Standard Home Manager module arguments
 { config, lib, pkgs, ... }:
 
-# Output: Complete Home Manager configuration for Cole
+# Output: Complete Home Manager configuration for coal
 {
   imports = [ ./common.nix ];
   
-  home.username = "cole";
-  home.homeDirectory = "/home/cole";
+  home.username = "coal";
+  home.homeDirectory = "/home/coal";
   
   programs.git = {
     enable = true;
-    userName = "Cole Bateman";
-    userEmail = "...";  # Cole's email
+    userName = "coal-bap";
+    userEmail = "...";  # coal's email
     extraConfig = {
       init.defaultBranch = "main";
       pull.rebase = true;
@@ -172,7 +172,7 @@ Cole's personal Home Manager configuration.
     };
   };
   
-  # Cole-specific customizations here
+  # coal-specific customizations here
 }
 ```
 
@@ -239,13 +239,13 @@ services.code-server = {
 
 **Option A: Separate service modules**
 ```nix
-# modules/services/code-server-cole.nix
+# modules/services/code-server-coal.nix
 services.code-server = {
   enable = true;
   host = "127.0.0.1";
   port = 8080;
   auth = "none";
-  user = "cole";
+  user = "coal";
 };
 
 # modules/services/code-server-violino.nix (optional)
@@ -259,7 +259,7 @@ services.code-server = {
 
 let
   users = {
-    cole = { port = 8080; enable = true; };
+    coal = { port = 8080; enable = true; };
     violino = { port = 8081; enable = true; };  # Optional
   };
 in
@@ -336,7 +336,7 @@ imports = [
 
 | Variable | Required For | Description |
 |----------|--------------|-------------|
-| `SSH_KEY_COLE` | Deploy builds | Cole's SSH ed25519 public key |
+| `SSH_KEY_COAL` | Deploy builds | coal's SSH ed25519 public key |
 | `SSH_KEY_VIOLINO` | Deploy builds | Violino's SSH ed25519 public key |
 
 ### CI Job Configuration
@@ -352,12 +352,12 @@ imports = [
 
 ```bash
 # For local deployment builds
-export SSH_KEY_COLE="ssh-ed25519 AAAA..."
+export SSH_KEY_COAL="ssh-ed25519 AAAA..."
 export SSH_KEY_VIOLINO="ssh-ed25519 AAAA..."
 sudo nixos-rebuild switch --flake .#devbox
 
 # Or use .env file with direnv
 # .env (gitignored)
-SSH_KEY_COLE="ssh-ed25519 AAAA..."
+SSH_KEY_COAL="ssh-ed25519 AAAA..."
 SSH_KEY_VIOLINO="ssh-ed25519 AAAA..."
 ```

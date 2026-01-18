@@ -15,21 +15,21 @@
   description = "NixOS configuration for a secure, headless development machine";
 
   inputs = {
-    # NixOS 24.05 stable channel
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    # NixOS 25.05 stable channel
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
 
     # Home Manager for user environment management
     # Follows nixpkgs to ensure package consistency
     home-manager = {
-      url = "github:nix-community/home-manager/release-24.05";
+      url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # NixOS-WSL for running NixOS on Windows Subsystem for Linux
-    # Provides WSL-specific modules and configuration
-    # Using 2405.x release for compatibility with nixos-24.05
+    # Uses release branch for automatic patch updates via `nix flake update`
+    # Version scheme: 25.05 = NixOS 25.05 compatible
     nixos-wsl = {
-      url = "github:nix-community/NixOS-WSL/2405.5.4";
+      url = "github:nix-community/NixOS-WSL/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

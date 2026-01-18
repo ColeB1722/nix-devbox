@@ -58,5 +58,6 @@
   # NixOS state version
   # This determines which NixOS defaults are used for stateful data
   # Should match the NixOS version used for initial installation
-  system.stateVersion = "24.05";
+  # Use mkDefault so hosts can override for fresh installations
+  system.stateVersion = lib.mkDefault "24.05";
 }

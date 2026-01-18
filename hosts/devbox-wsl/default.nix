@@ -124,6 +124,7 @@
     wslu # WSL utilities (wslview, wslpath, etc.)
   ];
 
-  # NixOS state version
-  system.stateVersion = "24.05";
+  # NixOS state version - set to 25.05 for fresh WSL installations
+  # Do NOT change this after initial deployment
+  system.stateVersion = "25.05";
 }

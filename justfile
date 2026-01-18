@@ -70,6 +70,11 @@ deploy:
 deploy-remote HOST="devbox" CONFIG="devbox":
     ssh coal@{{HOST}} "sudo nixos-rebuild switch --flake 'https://flakehub.com/f/coal-bap/nix-devbox/*#{{CONFIG}}'"
 
+# Deploy and reboot remote devbox (reboot only on successful rebuild)
+# Same as deploy-remote but reboots after successful switch
+deploy-remote-reboot HOST="devbox" CONFIG="devbox":
+    ssh coal@{{HOST}} "sudo nixos-rebuild switch --flake 'https://flakehub.com/f/coal-bap/nix-devbox/*#{{CONFIG}}' && sudo reboot"
+
 # Deploy on next boot only (safer for remote machines)
 boot:
     sudo nixos-rebuild boot --flake .#devbox

@@ -18,6 +18,9 @@
     # NixOS 25.05 stable channel
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
 
+    # Nixpkgs unstable for packages that need newer versions (e.g., security updates)
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
     # Home Manager for user environment management
     # Follows nixpkgs to ensure package consistency
     home-manager = {
@@ -46,6 +49,7 @@
     {
       self,
       nixpkgs,
+      nixpkgs-unstable,
       home-manager,
       nixos-wsl,
       git-hooks,
@@ -160,6 +164,14 @@
                   "claude-code" # AI coding assistant (FR-011)
                   "terraform" # Infrastructure as code (FR-022)
                 ];
+
+              # Overlay: Use unstable Tailscale for security updates
+              # nixos-25.05 stable has older Tailscale; unstable has security patches
+              nixpkgs.overlays = [
+                (_final: prev: {
+                  inherit (nixpkgs-unstable.legacyPackages.${prev.system}) tailscale;
+                })
+              ];
             }
           ];
         };
@@ -201,6 +213,14 @@
                   "claude-code" # AI coding assistant (FR-011)
                   "terraform" # Infrastructure as code (FR-022)
                 ];
+
+              # Overlay: Use unstable Tailscale for security updates
+              # nixos-25.05 stable has older Tailscale; unstable has security patches
+              nixpkgs.overlays = [
+                (_final: prev: {
+                  inherit (nixpkgs-unstable.legacyPackages.${prev.system}) tailscale;
+                })
+              ];
             }
           ];
         };

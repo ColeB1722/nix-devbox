@@ -59,6 +59,22 @@ hooks:
 deploy:
     sudo nixos-rebuild switch --flake .#devbox
 
+# Deploy latest FlakeHub version to remote devbox via SSH
+# Requires: Tailscale connection, SSH access to target host
+# Usage: just deploy-remote [HOST] [CONFIG]
+#   HOST   - target hostname (default: devbox)
+#   CONFIG - NixOS configuration name (default: devbox)
+# Examples:
+#   just deploy-remote                    # Deploy devbox config to devbox
+#   just deploy-remote devbox-wsl devbox-wsl  # Deploy devbox-wsl config to devbox-wsl
+deploy-remote HOST="devbox" CONFIG="devbox":
+    ssh coal@{{HOST}} "sudo nixos-rebuild switch --flake 'https://flakehub.com/f/coal-bap/nix-devbox/*#{{CONFIG}}'"
+
+# Deploy and reboot remote devbox (reboot only on successful rebuild)
+# Same as deploy-remote but reboots after successful switch
+deploy-remote-reboot HOST="devbox" CONFIG="devbox":
+    ssh coal@{{HOST}} "sudo nixos-rebuild switch --flake 'https://flakehub.com/f/coal-bap/nix-devbox/*#{{CONFIG}}' && sudo reboot"
+
 # Deploy on next boot only (safer for remote machines)
 boot:
     sudo nixos-rebuild boot --flake .#devbox

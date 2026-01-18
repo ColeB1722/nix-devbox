@@ -21,7 +21,9 @@
 #
 # SSH Access:
 #   From any machine on your tailnet:
-#     ssh devuser@<windows-hostname>  # or the Tailscale IP
+#     ssh coal@<windows-hostname>  # or the Tailscale IP
+#
+# Feature 006-multi-user-support: Updated for multi-user (coal, violino)
 
 {
   lib,
@@ -58,7 +60,7 @@
   # Enable WSL integration
   wsl = {
     enable = true;
-    defaultUser = "devuser";
+    defaultUser = "coal"; # Primary admin user (Feature 006)
 
     # Start menu launchers for GUI apps (if any)
     startMenuLaunchers = false;

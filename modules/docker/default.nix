@@ -13,6 +13,7 @@
 # Docker Desktop on the Windows host. See hosts/devbox-wsl/default.nix.
 #
 # Feature: 005-devtools-config (FR-007, FR-008, FR-009)
+# Feature: 006-multi-user-support (updated assertions for multi-user)
 
 {
   config,
@@ -42,17 +43,24 @@
   };
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Security Assertion
+  # Security Assertions
   # ─────────────────────────────────────────────────────────────────────────────
-  # Ensure the primary user is in the docker group to avoid permission issues.
+  # Ensure all dev users are in the docker group to avoid permission issues.
   # This assertion helps catch misconfiguration early.
 
   assertions = [
     {
-      assertion = builtins.elem "docker" (config.users.users.devuser.extraGroups or [ ]);
+      assertion = builtins.elem "docker" (config.users.users.coal.extraGroups or [ ]);
       message = ''
-        Docker module requires user 'devuser' to be in the 'docker' group.
-        Add "docker" to users.users.devuser.extraGroups in modules/user/default.nix
+        Docker module requires user 'coal' to be in the 'docker' group.
+        Add "docker" to users.users.coal.extraGroups in modules/user/default.nix
+      '';
+    }
+    {
+      assertion = builtins.elem "docker" (config.users.users.violino.extraGroups or [ ]);
+      message = ''
+        Docker module requires user 'violino' to be in the 'docker' group.
+        Add "docker" to users.users.violino.extraGroups in modules/user/default.nix
       '';
     }
   ];

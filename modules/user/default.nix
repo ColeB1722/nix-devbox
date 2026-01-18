@@ -27,15 +27,18 @@ let
   userKeys = config.users.users.${username}.openssh.authorizedKeys.keys;
 in
 {
-  # Security assertion: User MUST have at least one SSH key configured
+  # Security assertion: User MUST have at least one valid SSH key configured
   # Since password auth is disabled, no SSH key = no access
+  # Also detects placeholder keys that would lock the user out
   assertions = [
     {
-      assertion = (builtins.length userKeys) > 0;
+      assertion =
+        (builtins.length userKeys) > 0 && !(builtins.any (k: lib.hasInfix "Placeholder" k) userKeys);
       message = ''
-        SECURITY WARNING: No SSH keys configured for user '${username}'.
+        SECURITY WARNING: No valid SSH keys configured for user '${username}'.
         With password authentication disabled, you will be locked out!
-        Add your public key to users.users.${username}.openssh.authorizedKeys.keys
+        Replace the placeholder key in users.users.${username}.openssh.authorizedKeys.keys
+        with your actual SSH public key (e.g., from ~/.ssh/id_ed25519.pub)
       '';
     }
   ];

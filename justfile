@@ -85,7 +85,7 @@ update:
 
 # Update a specific input (e.g., just update-input nixpkgs)
 update-input input:
-    nix flake lock --update-input {{input}}
+    nix flake update {{input}}
 
 # Garbage collect old generations (keeps last 5)
 gc:

@@ -41,9 +41,8 @@ This contract defines the interface between the Nix flake and git-hooks.nix for 
 **Input**: All `*.nix` files in repository
 **Output**: Modified files (in-place formatting)
 **Exit codes**:
-- 0: All files formatted (or already formatted)
-- 1: Formatting applied (files modified)
-- Non-zero: Error during formatting
+- 0: Success (files formatted or already formatted)
+- Non-zero: Error during formatting, or in `--check` mode, files need formatting
 
 ### statix
 

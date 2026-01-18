@@ -1,7 +1,8 @@
 # OpenCode local config (may contain API keys)
 opencode.json
 
-# Hardware configuration (machine-specific overrides, contains disk UUIDs)
+# Hardware configuration (machine-specific, contains disk UUIDs)
+hosts/*/hardware-configuration.nix
 hosts/*/hardware-configuration.nix.local
 
 # Nix build outputs

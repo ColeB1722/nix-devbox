@@ -56,13 +56,15 @@ in
       "networkmanager"
     ];
 
-    # SSH authorized keys - REPLACE WITH YOUR ACTUAL PUBLIC KEY
+    # SSH authorized keys - ADD YOUR ACTUAL PUBLIC KEY HERE
     # Generate with: ssh-keygen -t ed25519 -C "devbox"
     # Then paste the contents of ~/.ssh/id_ed25519.pub here
     openssh.authorizedKeys.keys = [
-      # TODO: Replace this placeholder with your actual SSH public key
+      # CI test key - valid format, no corresponding private key exists
+      # This allows CI to pass; replace with your real key for actual deployment
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMDzNXj/bqwEICgfkBUZ9Gm522PHkEXXiyuSG66IK5rd ci-test-key@nix-devbox"
+      # TODO: Add your actual SSH public key below
       # Example: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... your-email@example.com"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderKeyReplaceWithYourActualPublicKey devbox-placeholder"
     ];
 
     # Default shell

@@ -13,6 +13,9 @@ Auto-generated from all feature plans. Last updated: 2026-01-17
 ```text
 flake.nix                    # Flake entry point with inputs/outputs
 flake.lock                   # Pinned dependency versions
+justfile                     # Task runner (just) for common commands
+.gitignore                   # Git ignore rules
+.github/workflows/ci.yml     # GitHub Actions CI workflow
 
 hosts/
 └── devbox/
@@ -38,24 +41,32 @@ specs/                       # Feature specifications (speckit)
 
 ## Commands
 
+Use `just` for common tasks (run `just` to see all available targets):
+
 ```bash
-# Validate flake structure
-nix flake check
+# Development
+just develop          # Enter dev shell with pre-commit hooks
+just check            # Run all flake checks
+just build            # Build NixOS configuration
+just fmt              # Format all Nix files
+just lint             # Run linters (statix + deadnix)
 
-# Build without deploying (test configuration)
-nixos-rebuild build --flake .#devbox
+# Deployment (on target machine)
+just deploy           # Deploy configuration
+just rollback         # Rollback to previous generation
 
-# Deploy to current machine
-sudo nixos-rebuild switch --flake .#devbox
+# Maintenance
+just update           # Update all flake inputs
+just gc               # Garbage collect (older than 30 days)
+```
 
-# Rollback to previous generation
-sudo nixos-rebuild switch --rollback
+Or use nix commands directly:
 
-# Update flake inputs
-nix flake update
-
-# Show flake outputs
-nix flake show
+```bash
+nix flake check                              # Validate flake
+nixos-rebuild build --flake .#devbox         # Build without deploying
+sudo nixos-rebuild switch --flake .#devbox   # Deploy to current machine
+nix flake update                             # Update flake inputs
 ```
 
 ## Code Style

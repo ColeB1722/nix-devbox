@@ -63,7 +63,7 @@ deploy:
 boot:
     sudo nixos-rebuild boot --flake .#devbox
 
-# Test configuration in a VM (if available)
+# Test configuration without adding to bootloader (activates temporarily until reboot)
 test:
     sudo nixos-rebuild test --flake .#devbox
 
@@ -87,7 +87,7 @@ update:
 update-input input:
     nix flake update {{input}}
 
-# Garbage collect old generations (keeps last 5)
+# Garbage collect old generations (removes generations older than 30 days)
 gc:
     sudo nix-collect-garbage --delete-older-than 30d
     nix-collect-garbage --delete-older-than 30d

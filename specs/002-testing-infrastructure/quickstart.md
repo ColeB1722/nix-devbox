@@ -73,15 +73,16 @@ nix flake check
 
 ## CI Workflow
 
-GitHub Actions runs different checks based on branch:
+GitHub Actions runs the full pipeline on protected branches only:
 
-| Branch | Format Check | Flake Check | Build |
-|--------|--------------|-------------|-------|
-| Feature branches | Yes | No | No |
-| `release/*` | Yes | Yes | Yes |
-| `main` | Yes | Yes | Yes |
+| Trigger | Format Check | Flake Check | Build |
+|---------|--------------|-------------|-------|
+| Push to feature branch | No | No | No |
+| PR targeting `main` or `release/*` | Yes | Yes | Yes |
+| Push to `release/*` | Yes | Yes | Yes |
+| Push to `main` | Yes | Yes | Yes |
 
-This keeps feature branch CI fast while ensuring release branches are fully validated.
+Feature branches rely on pre-commit hooks for local validation. CI runs when you open a PR or push directly to protected branches.
 
 ## Fixing Issues
 

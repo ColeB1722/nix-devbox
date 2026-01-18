@@ -118,34 +118,8 @@
               types = [ "text" ];
             };
 
-            # Verify no real SSH keys are committed (only CI test key allowed)
-            check-ssh-keys = {
-              enable = true;
-              name = "check-ssh-keys";
-              description = "Verify SSH keys are safe for public repo";
-              entry = ''
-                ${pkgs.bash}/bin/bash -c '
-                  # Only check modules/user/default.nix where SSH keys are configured
-                  for file in "$@"; do
-                    if [[ "$file" == "modules/user/default.nix" ]]; then
-                      # Look for SSH public keys that are NOT the known CI test key or placeholders
-                      if grep -E "ssh-(ed25519|rsa|ecdsa) [A-Za-z0-9+/]+" "$file" 2>/dev/null | \
-                         grep -v "ci-test-key@nix-devbox" | \
-                         grep -v "Placeholder" | \
-                         grep -v "# Example:" | \
-                         grep -v "example.com" | \
-                         grep -q .; then
-                        echo "ERROR: Potentially real SSH key found in $file"
-                        echo "Only the CI test key (ci-test-key@nix-devbox) or placeholders are allowed."
-                        echo "If deploying, use secret management (agenix/sops-nix) instead."
-                        exit 1
-                      fi
-                    fi
-                  done
-                '
-              '';
-              types = [ "file" ];
-            };
+            # Note: check-ssh-keys hook removed - SSH public keys are safe to commit
+            # (they are designed to be shared, unlike private keys)
           };
         };
     in

@@ -82,13 +82,30 @@ Each module includes:
 2. Security model documentation (for security-relevant modules)
 3. Usage instructions and customization notes
 
-## Security Assertions
+## Security
+
+### Pre-commit Security Hooks
+
+The following security checks run on every commit:
+- **gitleaks**: Scans for secrets, API keys, and credentials
+- **detect-private-key**: Blocks commits containing private keys
+- **check-ssh-keys**: Verifies only safe SSH key patterns are committed
+
+### NixOS Assertions
 
 The following security properties are enforced via NixOS assertions:
 - Firewall MUST be enabled (modules/networking/default.nix)
 - SSH password authentication MUST be disabled (modules/security/ssh.nix)
 - SSH root login MUST be denied (modules/security/ssh.nix)
-- User MUST have at least one SSH key (modules/user/default.nix)
+- User MUST have at least one valid SSH key (modules/user/default.nix)
+
+### Public Repository Safety
+
+This repo is designed to be safely public:
+- No secrets or credentials committed
+- SSH keys are either CI test keys (no private key) or placeholders
+- Pre-commit hooks prevent accidental secret commits
+- Hardware-specific configs are gitignored
 
 ## Recent Changes
 - 002-testing-infrastructure: Added Nix (flakes format, NixOS 24.05+) + git-hooks.nix (cachix), nixfmt, statix, deadnix

@@ -35,16 +35,23 @@ nix develop
 ```
 
 This automatically:
-- Installs pre-commit hooks (nixfmt, statix, deadnix)
+- Installs pre-commit hooks (code quality + security)
 - Provides all linting tools in your PATH
 - Prints confirmation when hooks are installed
 
 ### 2. Make Changes and Commit
 
 Hooks run automatically on `git commit`:
+
+**Code Quality:**
 - **nixfmt-rfc-style**: Formats all `.nix` files
 - **statix**: Detects antipatterns and inefficient code
 - **deadnix**: Finds unused variables and arguments
+
+**Security:**
+- **gitleaks**: Scans for secrets, API keys, and credentials
+- **detect-private-key**: Blocks commits containing private keys
+- **check-ssh-keys**: Verifies SSH keys are safe for public repo
 
 If any hook fails, the commit is blocked until issues are fixed.
 
@@ -57,9 +64,15 @@ nix develop -c pre-commit run --all-files
 
 Run a specific hook:
 ```bash
+# Code quality
 nix develop -c pre-commit run nixfmt-rfc-style --all-files
 nix develop -c pre-commit run statix --all-files
 nix develop -c pre-commit run deadnix --all-files
+
+# Security
+nix develop -c pre-commit run gitleaks --all-files
+nix develop -c pre-commit run detect-private-key --all-files
+nix develop -c pre-commit run check-ssh-keys --all-files
 ```
 
 ### 4. Full Validation
@@ -121,6 +134,23 @@ Auto-fix (removes unused code):
 ```bash
 nix develop -c deadnix -e .
 ```
+
+### Secret Detection (gitleaks)
+
+Gitleaks blocks commits containing secrets. If you get a false positive:
+
+1. **Verify it's not a real secret** — check the flagged content
+2. **Add to `.gitleaksignore`** — if it's a known-safe pattern
+3. **Use `--no-verify`** — emergency only, CI will still catch it
+
+### SSH Key Verification (check-ssh-keys)
+
+Only these SSH key patterns are allowed in the repo:
+- `ci-test-key@nix-devbox` — CI test key (no private key exists)
+- Keys containing "Placeholder" — obvious placeholders
+- Keys in comments (e.g., `# Example:`)
+
+If you need to add your real SSH key for deployment, do NOT commit it. Use a secret management solution like `agenix` or `sops-nix` instead.
 
 ## Skipping Hooks (Emergency Only)
 

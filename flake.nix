@@ -48,13 +48,20 @@
       # Supports: x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin
       forEachSystem = nixpkgs.lib.genAttrs (import systems);
 
-      # Pre-commit hook configuration for code quality checks
-      # Runs nixfmt-rfc-style, statix, and deadnix on all .nix files
+      # Pre-commit hook configuration for code quality and security checks
+      # Runs formatting, linting, and security scanning on all commits
       mkPreCommitCheck =
         system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
         git-hooks.lib.${system}.run {
           src = ./.;
           hooks = {
+            # ─────────────────────────────────────────────────────────────
+            # Code Quality Hooks
+            # ─────────────────────────────────────────────────────────────
+
             # Format Nix files using RFC-style formatter (nixpkgs standard)
             nixfmt-rfc-style.enable = true;
             # Detect antipatterns and inefficient Nix code
@@ -64,6 +71,71 @@
             deadnix = {
               enable = true;
               settings.noUnderscore = true;
+            };
+
+            # ─────────────────────────────────────────────────────────────
+            # Security Hooks
+            # ─────────────────────────────────────────────────────────────
+
+            # Scan for secrets, API keys, and credentials
+            gitleaks = {
+              enable = true;
+              name = "gitleaks";
+              description = "Detect hardcoded secrets";
+              entry = "${pkgs.gitleaks}/bin/gitleaks protect --staged --verbose --redact";
+              pass_filenames = false;
+            };
+
+            # Detect private keys (SSH, PGP, etc.)
+            # Uses gitleaks pattern matching instead of grep to avoid false positives
+            detect-private-key = {
+              enable = true;
+              name = "detect-private-key";
+              description = "Detect private keys";
+              entry = ''
+                ${pkgs.bash}/bin/bash -c '
+                  # Check for actual private key file markers (BEGIN ... PRIVATE KEY)
+                  # Exclude flake.nix to avoid matching this hook definition
+                  for file in "$@"; do
+                    if [[ "$file" != "flake.nix" ]] && [[ -f "$file" ]]; then
+                      if grep -l "BEGIN.*PRIVATE" "$file" 2>/dev/null | grep -v "detect-private"; then
+                        echo "ERROR: Private key detected in $file!"
+                        exit 1
+                      fi
+                    fi
+                  done
+                '
+              '';
+              types = [ "text" ];
+            };
+
+            # Verify no real SSH keys are committed (only CI test key allowed)
+            check-ssh-keys = {
+              enable = true;
+              name = "check-ssh-keys";
+              description = "Verify SSH keys are safe for public repo";
+              entry = ''
+                ${pkgs.bash}/bin/bash -c '
+                  # Only check modules/user/default.nix where SSH keys are configured
+                  for file in "$@"; do
+                    if [[ "$file" == "modules/user/default.nix" ]]; then
+                      # Look for SSH public keys that are NOT the known CI test key or placeholders
+                      if grep -E "ssh-(ed25519|rsa|ecdsa) [A-Za-z0-9+/]+" "$file" 2>/dev/null | \
+                         grep -v "ci-test-key@nix-devbox" | \
+                         grep -v "Placeholder" | \
+                         grep -v "# Example:" | \
+                         grep -v "example.com" | \
+                         grep -q .; then
+                        echo "ERROR: Potentially real SSH key found in $file"
+                        echo "Only the CI test key (ci-test-key@nix-devbox) or placeholders are allowed."
+                        echo "If deploying, use secret management (agenix/sops-nix) instead."
+                        exit 1
+                      fi
+                    fi
+                  done
+                '
+              '';
+              types = [ "file" ];
             };
           };
         };

@@ -97,11 +97,9 @@ home/
 
 ## SSH Keys
 
-SSH keys are injected via environment variables at build time:
-- `SSH_KEY_COAL`: coal's SSH public key
-- `SSH_KEY_VIOLINO`: violino's SSH public key
+SSH public keys are hardcoded in `modules/user/default.nix`. This is safe because public keys are designed to be shared—only private keys must be kept secret.
 
-For FlakeHub deployments, keys use placeholders. Set real keys via `.env` file for local builds.
+To add or update a user's key, edit the `coalKey` or `violinoKey` variables in that module.
 
 ## Resources
 

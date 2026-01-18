@@ -103,7 +103,7 @@ Each user has their own Home Manager configuration defining their personal envir
 - **FR-006**: System MUST support per-user Home Manager configurations
 - **FR-007**: System MUST allow both users to access the shared docker daemon
 - **FR-008**: System MUST validate that each user has at least one valid SSH key configured
-- **FR-009**: System MUST use usernames that identify each user (e.g., `cole`, `violino`) rather than generic names
+- **FR-009**: System MUST use usernames that identify each user (e.g., `coal`, `violino`) rather than generic names
 - **FR-010**: Secondary user (Violino) MUST NOT have sudo access by default
 - **FR-011**: System MUST provide per-user code-server instances on separate ports (Cole: 8080, Violino: 8081)
 - **FR-012**: System MUST NOT include real SSH keys in FlakeHub published artifacts; CI publish job must not have key environment variables configured
@@ -128,7 +128,7 @@ Each user has their own Home Manager configuration defining their personal envir
 
 ## Assumptions
 
-- SSH public keys are injected via environment variables (e.g., `SSH_KEY_COLE`, `SSH_KEY_VIOLINO`) at build time; CI publish job must NOT have these secrets to avoid publishing keys to FlakeHub
+- SSH public keys are injected via environment variables (e.g., `SSH_KEY_COAL`, `SSH_KEY_VIOLINO`) at build time; CI publish job must NOT have these secrets to avoid publishing keys to FlakeHub
 - If env vars are not set, placeholder keys are used (build succeeds with warning, SSH auth fails gracefully)
 - Optional strict mode (`NIX_STRICT_KEYS=true`) causes build to fail if keys are missing
 - The Tailscale ACL configuration in homelab-iac handles network-level access control; the devbox trusts SSH connections that reach it
@@ -149,3 +149,7 @@ Each user has their own Home Manager configuration defining their personal envir
 - Dynamic user creation (all users are defined in configuration)
 - Per-user docker isolation (both users share the docker daemon)
 - LDAP, Active Directory, or other external authentication
+
+## Future Enhancements
+
+- **CodeRabbit CLI**: Add CodeRabbit CLI (`cr`) for local AI-powered code review. Not currently in nixpkgs; requires either a custom Nix derivation or activation script to install via `curl -fsSL https://coderabbit.ai/install.sh | bash`. Lower priority as CodeRabbit GitHub App provides the same functionality for PRs.

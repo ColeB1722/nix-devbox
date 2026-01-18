@@ -160,7 +160,7 @@ Since NixOS `services.code-server` is single-instance, we'll either:
 
 ### 4. User Account Structure
 
-**Decision**: Named user accounts (`cole`, `violino`) with explicit UIDs for reproducibility.
+**Decision**: Named user accounts (`coal`, `violino`) with explicit UIDs for reproducibility.
 
 **Rationale**:
 - Named accounts are clearer than generic "devuser"

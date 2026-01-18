@@ -52,7 +52,7 @@ System groups that grant access to shared resources.
 | Group | Purpose | Members |
 |-------|---------|---------|
 | wheel | Sudo access | coal |
-| docker | Docker daemon access | cole, violino |
+| docker | Docker daemon access | coal, violino |
 | networkmanager | Network configuration | coal |
 
 ### code-server Instance
@@ -88,7 +88,7 @@ Required for deployment builds (not for FlakeHub publish):
 
 ```
 modules/user/default.nix
-├── User definitions (cole, violino)
+├── User definitions (coal, violino)
 ├── SSH key injection from env vars
 ├── Group memberships
 └── Home Manager user mappings

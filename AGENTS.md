@@ -5,6 +5,7 @@ Auto-generated from all feature plans. Last updated: 2026-01-17
 ## Active Technologies
 - Nix (flakes format, NixOS 24.05+) + git-hooks.nix (cachix), nixfmt, statix, deadnix (002-testing-infrastructure)
 - N/A (configuration files only) (002-testing-infrastructure)
+- Nix (flakes format, NixOS 25.05) + Home Manager 25.05, nixpkgs 25.05, existing modules from feature 001 (005-devtools-config)
 
 - Nix (flakes format, NixOS 24.05+) + NixOS modules, Home Manager, Tailscale (001-devbox-skeleton)
 
@@ -32,8 +33,14 @@ modules/
 │   └── tailscale.nix        # Tailscale VPN service (bare-metal only)
 ├── security/
 │   └── ssh.nix              # SSH hardening
-└── user/
-    └── default.nix          # User account and Home Manager
+├── user/
+│   └── default.nix          # User account and Home Manager
+├── shell/
+│   └── default.nix          # Fish shell system configuration (feature 005)
+├── docker/
+│   └── default.nix          # Docker container runtime (feature 005)
+└── services/
+    └── code-server.nix      # Browser-based VS Code (feature 005)
 
 home/
 └── default.nix              # Home Manager user environment
@@ -128,6 +135,7 @@ This repo is designed to be safely public:
 - Hardware-specific configs are gitignored
 
 ## Recent Changes
+- 005-devtools-config: Added Nix (flakes format, NixOS 25.05) + Home Manager 25.05, nixpkgs 25.05, existing modules from feature 001
 - 002-testing-infrastructure: Added Nix (flakes format, NixOS 24.05+) + git-hooks.nix (cachix), nixfmt, statix, deadnix
 
 - 001-devbox-skeleton: Implemented complete NixOS flake structure with modular architecture

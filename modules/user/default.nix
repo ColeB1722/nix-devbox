@@ -51,9 +51,11 @@ in
     # Group memberships:
     # - wheel: sudo access for system administration
     # - networkmanager: network configuration (if needed)
+    # - docker: run containers without sudo (FR-008)
     extraGroups = [
       "wheel"
       "networkmanager"
+      "docker"
     ];
 
     # SSH authorized keys
@@ -62,13 +64,18 @@ in
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMYEMoAMxPAGD4AzBPCAYV6UiHrAeMm/AJIGXKCikkuc"
     ];
 
-    # Default shell
-    shell = pkgs.bash;
+    # Default shell - Fish for modern CLI experience (FR-001)
+    # User-level Fish configuration is in home/default.nix
+    shell = pkgs.fish;
   };
 
   # Enable sudo for wheel group (passwordless for convenience in dev environment)
   # In production, consider removing NOPASSWD
   security.sudo.wheelNeedsPassword = false;
+
+  # 1Password CLI system-level setup (FR-023)
+  # Creates the onepassword-cli group and setgid wrapper for secure op binary
+  programs._1password.enable = true;
 
   # Home Manager configuration for the user
   home-manager.users.${username} = import ../../home;

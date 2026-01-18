@@ -12,7 +12,12 @@
 # system packages. This separation allows different users to have different
 # tool configurations on the same machine.
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Home Manager needs these to manage the user's home directory

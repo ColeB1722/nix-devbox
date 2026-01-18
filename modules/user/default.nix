@@ -11,7 +11,13 @@
 # IMPORTANT: You MUST replace the placeholder SSH key with your actual public key
 # before deploying. The system will not be accessible without a valid SSH key.
 
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
 let
   # Primary username - change this to your preferred username
@@ -42,7 +48,10 @@ in
     # Group memberships:
     # - wheel: sudo access for system administration
     # - networkmanager: network configuration (if needed)
-    extraGroups = [ "wheel" "networkmanager" ];
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+    ];
 
     # SSH authorized keys - REPLACE WITH YOUR ACTUAL PUBLIC KEY
     # Generate with: ssh-keygen -t ed25519 -C "devbox"

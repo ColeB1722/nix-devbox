@@ -8,13 +8,21 @@
 #   - Principle I: Declarative Configuration (all settings in Nix)
 #   - Principle V: Documentation as Code (inline comments)
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Enable experimental features for flakes support
   # Required for flake-based configuration management
   nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
 
     # Automatically deduplicate identical files in the Nix store
     # Saves disk space without affecting functionality
@@ -42,7 +50,7 @@
   # GRUB for BIOS/UEFI compatibility; adjust in host config if needed
   boot.loader.grub = {
     enable = lib.mkDefault true;
-    device = lib.mkDefault "nodev";  # Override in hardware-configuration.nix
+    device = lib.mkDefault "nodev"; # Override in hardware-configuration.nix
     efiSupport = lib.mkDefault true;
   };
   boot.loader.efi.canTouchEfiVariables = lib.mkDefault true;

@@ -13,7 +13,12 @@
 #   - UDP 41641 is open for Tailscale P2P connections (avoids DERP relay)
 #   - No TCP ports are exposed publicly
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Security assertion: Firewall MUST be enabled

@@ -13,7 +13,13 @@
 #   2. Update the SSH key in modules/user/default.nix
 #   3. Run: sudo nixos-rebuild switch --flake .#devbox
 
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
 {
   imports = [

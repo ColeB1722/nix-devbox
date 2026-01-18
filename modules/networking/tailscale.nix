@@ -17,7 +17,12 @@
 #   Run `sudo tailscale up` once to authenticate with your tailnet.
 #   Automated auth key provisioning is deferred to a future secret management feature.
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.devbox.tailscale;
@@ -34,7 +39,12 @@ in
     };
 
     useRoutingFeatures = lib.mkOption {
-      type = lib.types.enum [ "none" "client" "server" "both" ];
+      type = lib.types.enum [
+        "none"
+        "client"
+        "server"
+        "both"
+      ];
       default = "client";
       description = ''
         Routing features mode:

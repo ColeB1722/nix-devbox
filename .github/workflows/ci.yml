@@ -67,11 +67,11 @@ jobs:
       - name: Publish flake to FlakeHub
         uses: DeterminateSystems/flakehub-push@main
         with:
-          # Publish under the coal-bap FlakeHub organization
-          organization: coal-bap
           visibility: private
           # Rolling tag tracks latest main branch
           rolling: true
+          # Note: Flake will be published as ColeB1722/nix-devbox
+          # (FlakeHub org must match GitHub repo owner)
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Deploy Job (Manual Example)

@@ -24,7 +24,6 @@
 #     ssh devuser@<windows-hostname>  # or the Tailscale IP
 
 {
-  _config,
   lib,
   pkgs,
   ...

@@ -16,12 +16,7 @@
 # Note: Authorized keys are managed via users.users.<name>.openssh.authorizedKeys.keys
 # in the user module, NOT via ~/.ssh/authorized_keys files.
 
-{
-  config,
-  _lib,
-  _pkgs,
-  ...
-}:
+{ config, ... }:
 
 {
   # Security assertions: Enforce SSH hardening requirements

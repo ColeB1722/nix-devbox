@@ -1,0 +1,77 @@
+# CI workflow for nix-devbox
+#
+# Workflow tiers:
+# - All branches: Format check (fast validation)
+# - Release branches + main: Format + flake check + build
+# - Main: (future) Deploy to target machine
+#
+# Uses DeterminateSystems Nix installer for modern flake support
+# and magic-nix-cache for faster builds.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Check formatting
+        run: nix fmt -- --check .
+
+  check:
+    name: Flake Check
+    runs-on: ubuntu-latest
+    needs: format
+    # Only run on release branches and main
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/release/') || github.ref == 'refs/heads/main')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Run flake check
+        run: nix flake check
+
+  build:
+    name: Build NixOS Configuration
+    runs-on: ubuntu-latest
+    needs: check
+    # Only run on release branches and main (inherits from check job)
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/release/') || github.ref == 'refs/heads/main')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build devbox configuration
+        run: nix build .#nixosConfigurations.devbox.config.system.build.toplevel
+
+  # Future: deploy job
+  # deploy:
+  #   name: Deploy to Devbox
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   if: github.ref == 'refs/heads/main'
+  #   steps:
+  #     - name: Deploy via SSH/Tailscale
+  #       run: echo "TODO: implement deployment"

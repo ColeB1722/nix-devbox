@@ -1,0 +1,49 @@
+# Hardware Configuration Template
+#
+# This file is machine-specific and should be generated on the target system.
+# Copy this to hardware-configuration.nix and customize for your hardware.
+#
+# To generate for your machine:
+#   sudo nixos-generate-config --show-hardware-config > hosts/devbox/hardware-configuration.nix
+#
+# The actual hardware-configuration.nix is gitignored to prevent machine-specific
+# settings from being committed to the repository.
+
+{ config, lib, pkgs, modulesPath, ... }:
+
+{
+  imports = [
+    (modulesPath + "/installer/scan/not-detected.nix")
+  ];
+
+  # Boot configuration - adjust for your system
+  boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "nvme" "usbhid" "sd_mod" ];
+  boot.initrd.kernelModules = [ ];
+  boot.kernelModules = [ "kvm-intel" ];  # or "kvm-amd" for AMD CPUs
+  boot.extraModulePackages = [ ];
+
+  # Filesystem configuration - MUST be customized for your disk layout
+  fileSystems."/" = {
+    device = "/dev/disk/by-uuid/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
+    fsType = "ext4";  # or "btrfs", "xfs", etc.
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-uuid/XXXX-XXXX";
+    fsType = "vfat";
+  };
+
+  swapDevices = [
+    # { device = "/dev/disk/by-uuid/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"; }
+  ];
+
+  # Network configuration
+  networking.useDHCP = lib.mkDefault true;
+
+  # Platform - adjust if using aarch64-linux
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+
+  # Hardware-specific settings
+  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  # For AMD: hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+}

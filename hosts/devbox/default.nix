@@ -40,6 +40,16 @@
 
     # User account and Home Manager
     ../../modules/user
+
+    # Shell configuration (Fish) - Feature 005
+    ../../modules/shell
+
+    # Docker container runtime - Feature 005
+    # Note: NOT included in WSL config (uses Docker Desktop on Windows host)
+    ../../modules/docker
+
+    # code-server - Browser-based VS Code - Feature 005
+    ../../modules/services/code-server.nix
   ];
 
   # Machine identity

@@ -150,6 +150,16 @@
                   inherit inputs;
                 };
               };
+
+              # Allow specific unfree packages required by feature 005-devtools-config
+              # Constitution: Explicitly allowlist unfree packages rather than blanket allowUnfree
+              nixpkgs.config.allowUnfreePredicate =
+                pkg:
+                builtins.elem (nixpkgs.lib.getName pkg) [
+                  "1password-cli" # Secrets management (FR-023)
+                  "claude-code" # AI coding assistant (FR-011)
+                  "terraform" # Infrastructure as code (FR-022)
+                ];
             }
           ];
         };
@@ -181,6 +191,16 @@
                   inherit inputs;
                 };
               };
+
+              # Allow specific unfree packages required by feature 005-devtools-config
+              # Constitution: Explicitly allowlist unfree packages rather than blanket allowUnfree
+              nixpkgs.config.allowUnfreePredicate =
+                pkg:
+                builtins.elem (nixpkgs.lib.getName pkg) [
+                  "1password-cli" # Secrets management (FR-023)
+                  "claude-code" # AI coding assistant (FR-011)
+                  "terraform" # Infrastructure as code (FR-022)
+                ];
             }
           ];
         };

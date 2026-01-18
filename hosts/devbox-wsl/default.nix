@@ -42,6 +42,13 @@
 
     # Tailscale VPN (runs inside WSL with userspace networking)
     ../../modules/networking/tailscale.nix
+
+    # Shell configuration (Fish) - Feature 005
+    ../../modules/shell
+
+    # Note: Docker module (../../modules/docker) is NOT imported for WSL
+    # WSL uses Docker Desktop on the Windows host instead
+    # See: https://docs.docker.com/desktop/wsl/
   ];
 
   # ─────────────────────────────────────────────────────────────────────────────

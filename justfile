@@ -59,6 +59,10 @@ hooks:
 deploy:
     sudo nixos-rebuild switch --flake .#devbox
 
+# Deploy WSL configuration to current machine
+deploy-wsl:
+    sudo nixos-rebuild switch --flake .#devbox-wsl
+
 # Deploy latest FlakeHub version to remote devbox via SSH
 # Requires: Tailscale connection, SSH access to target host
 # Usage: just deploy-remote [HOST] [CONFIG]

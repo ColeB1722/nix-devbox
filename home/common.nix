@@ -52,6 +52,9 @@
     btop
     ncdu
 
+    # Build tools
+    just # Task runner
+
     # ─────────────────────────────────────────────────────────────────────────
     # Feature 005-devtools-config: Additional Development Tools
     # ─────────────────────────────────────────────────────────────────────────
@@ -66,6 +69,7 @@
     # Package Managers (FR-020, FR-021) - US7
     nodejs # Includes npm
     uv # Python package manager
+    bun # JavaScript runtime and package manager
 
     # Infrastructure (FR-022) - US8
     terraform # Infrastructure as code (unfree - allowed in flake.nix)
@@ -203,6 +207,7 @@
         init.defaultBranch = "main";
         pull.rebase = true;
         push.autoSetupRemote = true;
+        credential.helper = "!${pkgs.gh}/bin/gh auth git-credential";
       };
     };
 

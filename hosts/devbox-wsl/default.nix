@@ -10,7 +10,7 @@
 # Key differences from bare-metal devbox:
 #   - No hardware-configuration.nix (WSL handles hardware)
 #   - No bootloader configuration (Windows boots)
-#   - No Tailscale service (runs on Windows host instead)
+#   - Tailscale uses wireguard-go (userspace TUN) instead of kernel WireGuard
 #   - Firewall configured for WSL networking
 #
 # Setup:
@@ -42,7 +42,7 @@
     # User account and Home Manager
     ../../modules/user
 
-    # Tailscale VPN (runs inside WSL with userspace networking)
+    # Tailscale VPN (runs inside WSL with wireguard-go for TUN support)
     ../../modules/networking/tailscale.nix
 
     # Shell configuration (Fish) - Feature 005
@@ -116,8 +116,12 @@
   # Tailscale Configuration (WSL-specific)
   # ─────────────────────────────────────────────────────────────────────────────
   #
-  # Tailscale runs inside WSL with userspace networking mode.
-  # This gives WSL its own Tailscale identity (tag:shared) separate from Windows.
+  # Tailscale runs inside WSL using wireguard-go to create a tailscale0 TUN
+  # interface. This works without kernel WireGuard support.
+  #
+  # NOTE: Do NOT use `services.tailscale.interfaceName = "userspace-networking"`
+  # That forces Tailscale into SOCKS5/HTTP proxy mode which breaks SSH.
+  # WSL2 supports /dev/net/tun, so wireguard-go works correctly.
   #
   # After first rebuild, manually authenticate:
   #   sudo tailscale up --authkey=<shared_auth_key>
@@ -132,8 +136,8 @@
     useRoutingFeatures = "none";
   };
 
-  # WSL requires userspace networking (no kernel WireGuard support)
-  services.tailscale.interfaceName = "userspace-networking";
+  # Use default TUN mode (wireguard-go creates tailscale0 interface)
+  # Do NOT set interfaceName = "userspace-networking" - it breaks SSH
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Disable bare-metal specific features
@@ -142,11 +146,6 @@
   # No bootloader in WSL (Windows handles boot)
   boot.loader.grub.enable = lib.mkForce false;
   boot.loader.efi.canTouchEfiVariables = lib.mkForce false;
-
-  # Tailscale runs on Windows, not in WSL
-  # The devbox.tailscale option doesn't exist in WSL config (module not imported)
-  # If you need Tailscale in WSL directly, uncomment the tailscale import above
-  # and use userspace networking: tailscale up --netfilter-mode=off
 
   # ─────────────────────────────────────────────────────────────────────────────
   # WSL-specific packages

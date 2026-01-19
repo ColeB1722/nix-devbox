@@ -143,6 +143,12 @@
       interactiveShellInit = ''
         # Disable the greeting message
         set -g fish_greeting
+
+        # Add Bun global bin directory to PATH
+        # This allows globally installed bun packages to be accessible
+        if test -d ~/.bun/bin
+          fish_add_path -p ~/.bun/bin
+        end
       '';
     };
 

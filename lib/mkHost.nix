@@ -102,8 +102,7 @@ _:
                       userEmail = users.${name}.email;
                     };
 
-                    # Required by Home Manager (use mkDefault to allow profile overrides)
-                    home.stateVersion = nixpkgs.lib.mkDefault "25.05";
+                    # Note: home.stateVersion is set by imported profiles (developer.nix, minimal.nix)
                   };
               }) users.allUserNames
             );
@@ -137,7 +136,6 @@ _:
   #       system = "x86_64-linux";
   #       users = import ./users.nix;
   #       hardware = ./hardware/mybox.nix;
-  #       hostType = "devbox"; # or "devbox-wsl"
   #     };
   #
   mkHostWith =
@@ -197,7 +195,7 @@ _:
                       userEmail = users.${name}.email;
                     };
 
-                    home.stateVersion = nixpkgs.lib.mkDefault "25.05";
+                    # Note: home.stateVersion is set by imported profiles (developer.nix, minimal.nix)
                   };
               }) users.allUserNames
             );

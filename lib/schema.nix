@@ -28,9 +28,10 @@ rec {
     lib.assertMsg (user ? ${field}) "User '${name}' is missing required field '${field}'";
 
   # Validate that a string field is non-empty
+  # Self-contained: checks existence before accessing the field
   nonEmptyString =
     name: field: user:
-    lib.assertMsg (builtins.isString user.${field} && user.${field} != "")
+    lib.assertMsg (user ? ${field} && builtins.isString user.${field} && user.${field} != "")
       "User '${name}' field '${field}' must be a non-empty string (got: ${
         if user ? ${field} then builtins.typeOf user.${field} else "missing"
       })";

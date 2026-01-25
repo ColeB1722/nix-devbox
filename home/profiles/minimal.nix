@@ -11,7 +11,7 @@
 # Usage:
 #   imports = [ ../profiles/minimal.nix ];
 
-{ ... }:
+{ lib, ... }:
 
 {
   imports = [
@@ -24,5 +24,6 @@
   programs.home-manager.enable = true;
 
   # Home Manager state version - determines which defaults are used
-  home.stateVersion = "24.05";
+  # Use mkDefault so consumer/users.nix can override
+  home.stateVersion = lib.mkDefault "24.05";
 }

@@ -50,9 +50,8 @@
   };
   boot.loader.efi.canTouchEfiVariables = lib.mkDefault true;
 
-  # NixOS state version
-  # This determines which NixOS defaults are used for stateful data
-  # Should match the NixOS version used for initial installation
-  # Use mkDefault so hosts can override for fresh installations
-  system.stateVersion = lib.mkDefault "24.05";
+  # Note: system.stateVersion is NOT set here - it should be set in:
+  # - Hardware configuration (for bare-metal/VM)
+  # - Host configuration (for WSL or other specialized hosts)
+  # This ensures each deployment uses the appropriate version for its initial install.
 }

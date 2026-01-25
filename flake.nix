@@ -1,18 +1,26 @@
 # nix-devbox flake
 #
-# A minimal, secure, modular NixOS configuration for a self-hosted remote
-# development machine. Access via SSH over Tailscale only.
+# A library-style flake that exports reusable NixOS and Home Manager modules
+# for secure, headless development machines. Access via SSH over Tailscale only.
 #
-# Usage:
+# Architecture:
+#   - Public flake (this repo): Exports modules, no personal data
+#   - Consumer flake (private): Imports this, provides users + hardware
+#
+# Usage (consumer):
+#   inputs.nix-devbox.url = "https://flakehub.com/f/coal-bap/nix-devbox/*";
+#   modules = [ nix-devbox.nixosModules.default ./hardware.nix ];
+#   specialArgs = { users = import ./users.nix; };
+#
+# Usage (this repo CI):
 #   nix flake check                          # Validate flake structure
-#   nixos-rebuild build --flake .#devbox     # Build without deploying
-#   sudo nixos-rebuild switch --flake .#devbox  # Deploy to current machine
+#   nix build .#nixosConfigurations.devbox.config.system.build.toplevel
 #
 # Constitution: All configuration is declarative, headless-first, secure by
 # default, modular, and self-documenting.
 
 {
-  description = "NixOS configuration for a secure, headless development machine";
+  description = "Library flake: reusable NixOS modules for secure, headless development machines";
 
   inputs = {
     # NixOS 25.05 stable channel
@@ -60,6 +68,10 @@
       # Helper function to generate outputs for all supported systems
       # Supports: x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin
       forEachSystem = nixpkgs.lib.genAttrs (import systems);
+
+      # Example user data for CI builds (no personal data)
+      # Consumers provide their own users.nix with real data
+      exampleUsers = import ./examples/users.nix;
 
       # Pre-commit hook configuration for code quality and security checks
       # Runs formatting, linting, and security scanning on all commits
@@ -126,64 +138,141 @@
             # (they are designed to be shared, unlike private keys)
           };
         };
+
+      # Common nixpkgs config for all configurations
+      mkNixpkgsConfig = _system: {
+        # Allow specific unfree packages required by feature 005-devtools-config
+        # Constitution: Explicitly allowlist unfree packages rather than blanket allowUnfree
+        nixpkgs.config.allowUnfreePredicate =
+          pkg:
+          builtins.elem (nixpkgs.lib.getName pkg) [
+            "1password-cli" # Secrets management (FR-023)
+            "claude-code" # AI coding assistant (FR-011)
+            "terraform" # Infrastructure as code (FR-022)
+          ];
+
+        # Overlay: Use unstable Tailscale for security updates
+        # nixos-25.05 stable has older Tailscale; unstable has security patches
+        nixpkgs.overlays = [
+          (_final: prev: {
+            inherit (nixpkgs-unstable.legacyPackages.${prev.system}) tailscale;
+          })
+        ];
+      };
     in
     {
-      # NixOS system configurations
-      # Each host gets its own configuration under nixosConfigurations.<hostname>
+      # ─────────────────────────────────────────────────────────────────────────
+      # Module Exports (for consumers)
+      # ─────────────────────────────────────────────────────────────────────────
+      # Consumers import these modules and provide their own user data via specialArgs
+
+      nixosModules = {
+        # Individual NixOS modules
+        core = import ./nixos/core.nix;
+        ssh = import ./nixos/ssh.nix;
+        firewall = import ./nixos/firewall.nix;
+        tailscale = import ./nixos/tailscale.nix;
+        docker = import ./nixos/docker.nix;
+        fish = import ./nixos/fish.nix;
+        users = import ./nixos/users.nix;
+        code-server = import ./nixos/code-server.nix;
+
+        # All NixOS modules combined (most consumers want this)
+        default = {
+          imports = [
+            ./nixos/core.nix
+            ./nixos/ssh.nix
+            ./nixos/firewall.nix
+            ./nixos/tailscale.nix
+            ./nixos/docker.nix
+            ./nixos/fish.nix
+            ./nixos/users.nix
+            ./nixos/code-server.nix
+          ];
+        };
+      };
+
+      homeManagerModules = {
+        # Individual Home Manager modules
+        cli = import ./home/modules/cli.nix;
+        fish = import ./home/modules/fish.nix;
+        git = import ./home/modules/git.nix;
+        dev = import ./home/modules/dev.nix;
+
+        # Home Manager profiles (composable bundles)
+        profiles = {
+          minimal = import ./home/profiles/minimal.nix;
+          developer = import ./home/profiles/developer.nix;
+        };
+      };
+
+      # Host definitions (importable templates)
+      # Consumers import these and provide hardware + users
+      hosts = {
+        devbox = import ./hosts/devbox;
+        devbox-wsl = import ./hosts/devbox-wsl;
+      };
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Example Configurations (for CI and testing)
+      # ─────────────────────────────────────────────────────────────────────────
+      # These use example/placeholder data - no personal information
+
       nixosConfigurations = {
         # Primary devbox configuration (bare metal / VM)
+        # Uses example users and hardware for CI builds
         devbox = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
 
-          # Pass flake inputs to all modules via specialArgs
+          # Pass example users + flake inputs to all modules
           specialArgs = {
             inherit inputs;
+            users = exampleUsers;
           };
 
           modules = [
-            # Machine-specific configuration
+            # Host definition (imports all NixOS modules)
             ./hosts/devbox
+
+            # Example hardware configuration for CI
+            ./examples/hardware-example.nix
 
             # Home Manager as NixOS module for atomic system+user updates
             home-manager.nixosModules.home-manager
             {
               home-manager = {
-                useGlobalPkgs = true; # Use system nixpkgs
-                useUserPackages = true; # Install to /etc/profiles
+                useGlobalPkgs = true;
+                useUserPackages = true;
                 extraSpecialArgs = {
                   inherit inputs;
+                  users = exampleUsers;
                 };
+                # Import developer profile for all users
+                users = builtins.listToAttrs (
+                  map (name: {
+                    inherit name;
+                    value = {
+                      imports = [ ./home/profiles/developer.nix ];
+                    };
+                  }) exampleUsers.allUserNames
+                );
               };
-
-              # Allow specific unfree packages required by feature 005-devtools-config
-              # Constitution: Explicitly allowlist unfree packages rather than blanket allowUnfree
-              nixpkgs.config.allowUnfreePredicate =
-                pkg:
-                builtins.elem (nixpkgs.lib.getName pkg) [
-                  "1password-cli" # Secrets management (FR-023)
-                  "claude-code" # AI coding assistant (FR-011)
-                  "terraform" # Infrastructure as code (FR-022)
-                ];
-
-              # Overlay: Use unstable Tailscale for security updates
-              # nixos-25.05 stable has older Tailscale; unstable has security patches
-              nixpkgs.overlays = [
-                (_final: prev: {
-                  inherit (nixpkgs-unstable.legacyPackages.${prev.system}) tailscale;
-                })
-              ];
             }
+
+            # Nixpkgs configuration
+            (mkNixpkgsConfig "x86_64-linux")
           ];
         };
 
         # WSL configuration (Windows Subsystem for Linux)
-        # Use with: sudo nixos-rebuild switch --flake .#devbox-wsl
+        # Uses example users for CI builds
         devbox-wsl = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
 
-          # Pass flake inputs to all modules via specialArgs
+          # Pass example users + flake inputs to all modules
           specialArgs = {
             inherit inputs;
+            users = exampleUsers;
           };
 
           modules = [
@@ -197,33 +286,38 @@
             home-manager.nixosModules.home-manager
             {
               home-manager = {
-                useGlobalPkgs = true; # Use system nixpkgs
-                useUserPackages = true; # Install to /etc/profiles
+                useGlobalPkgs = true;
+                useUserPackages = true;
                 extraSpecialArgs = {
                   inherit inputs;
+                  users = exampleUsers;
                 };
+                # Import developer profile for all users
+                users = builtins.listToAttrs (
+                  map (name: {
+                    inherit name;
+                    value = {
+                      imports = [ ./home/profiles/developer.nix ];
+                    };
+                  }) exampleUsers.allUserNames
+                );
               };
-
-              # Allow specific unfree packages required by feature 005-devtools-config
-              # Constitution: Explicitly allowlist unfree packages rather than blanket allowUnfree
-              nixpkgs.config.allowUnfreePredicate =
-                pkg:
-                builtins.elem (nixpkgs.lib.getName pkg) [
-                  "1password-cli" # Secrets management (FR-023)
-                  "claude-code" # AI coding assistant (FR-011)
-                  "terraform" # Infrastructure as code (FR-022)
-                ];
-
-              # Overlay: Use unstable Tailscale for security updates
-              # nixos-25.05 stable has older Tailscale; unstable has security patches
-              nixpkgs.overlays = [
-                (_final: prev: {
-                  inherit (nixpkgs-unstable.legacyPackages.${prev.system}) tailscale;
-                })
-              ];
             }
+
+            # Nixpkgs configuration
+            (mkNixpkgsConfig "x86_64-linux")
           ];
         };
+      };
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Library Exports (for consumers)
+      # ─────────────────────────────────────────────────────────────────────────
+
+      # Schema validation functions
+      lib = {
+        schema = import ./lib/schema.nix { inherit (nixpkgs) lib; };
+        mkHost = import ./lib/mkHost.nix { inherit (nixpkgs) lib; };
       };
 
       # Pre-commit checks for each supported system

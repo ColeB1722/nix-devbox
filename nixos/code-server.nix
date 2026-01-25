@@ -2,7 +2,7 @@
 #
 # Enables code-server for multiple users, providing VS Code in a
 # web browser for remote development. Each user gets their own instance
-# on a dedicated port (defined in lib/users.nix).
+# on a dedicated port (defined in consumer's users.nix via codeServerPorts).
 #
 # Security model:
 #   - code-server binds to all interfaces (0.0.0.0)
@@ -10,30 +10,28 @@
 #   - Firewall trusts tailscale0 interface (see nixos/firewall.nix)
 #   - No authentication in code-server itself (Tailscale provides identity)
 #
-# ACL policy (managed in homelab-iac/tailscale/main.tf):
-#   - coal (admin): can access both 8080 and 8081 (full access for troubleshooting)
-#   - violino (user): can only access 8081 (their own instance)
-#
 # Constitution alignment:
 #   - Principle I: Declarative Configuration (service in Nix, ACLs in Terraform)
 #   - Principle II: Headless-First Design (browser-based IDE, no GUI on server)
 #   - Principle III: Security by Default (Tailscale ACLs control access)
-#   - Principle IV: Modular and Reusable (separate service module)
+#   - Principle IV: Modular and Reusable (accepts user data from consumer)
 #   - Principle V: Documentation as Code (inline comments)
 #
+# Required specialArgs:
+#   users - User data attrset with allUserNames and codeServerPorts
+#
 # Access (from any device on tailnet with appropriate ACL permissions):
-#   - coal: http://devbox:8080 or http://<tailscale-ip>:8080
-#   - violino: http://devbox:8081 or http://<tailscale-ip>:8081
+#   http://devbox:<port> or http://<tailscale-ip>:<port>
 
 {
   config,
+  lib,
   pkgs,
+  users,
   ...
 }:
 
 let
-  users = import ../lib/users.nix;
-
   # Common code-server packages for the integrated terminal
   codeServerPackages = with pkgs; [
     git
@@ -71,6 +69,22 @@ let
     path = codeServerPackages;
   };
 
+  # Get port for a user (with fallback for users without explicit port assignment)
+  getPort =
+    name: index:
+    if users ? codeServerPorts && users.codeServerPorts ? ${name} then
+      users.codeServerPorts.${name}
+    else
+      8080 + index;
+
+  # Create services for all users
+  userServices = builtins.listToAttrs (
+    lib.imap0 (index: name: {
+      name = "code-server-${name}";
+      value = mkCodeServerService name (getPort name index);
+    }) users.allUserNames
+  );
+
 in
 {
   # ─────────────────────────────────────────────────────────────────────────────
@@ -99,14 +113,11 @@ in
   # Each user gets their own code-server instance on a dedicated port.
   # This provides isolation - each user's extensions, settings, and terminal
   # sessions are independent.
+  #
+  # Port assignments come from users.codeServerPorts (defined in consumer's users.nix)
+  # If a user doesn't have an explicit port, they get 8080 + their index in allUserNames
 
-  systemd.services = {
-    # coal's code-server on port 8080
-    "code-server-coal" = mkCodeServerService "coal" users.codeServerPorts.coal;
-
-    # violino's code-server on port 8081
-    "code-server-violino" = mkCodeServerService "violino" users.codeServerPorts.violino;
-  };
+  systemd.services = userServices;
 
   # Ensure code-server package is available system-wide
   environment.systemPackages = [ pkgs.code-server ];

@@ -43,9 +43,19 @@
     # Shell configuration (Fish)
     ../../nixos/fish.nix
 
-    # Docker container runtime
+    # Podman container runtime (replaces Docker for bare-metal)
     # Note: NOT included in WSL config (uses Docker Desktop on Windows host)
-    ../../nixos/docker.nix
+    # Note: Conflicts with docker.nix when dockerCompat is enabled
+    ../../nixos/podman.nix
+
+    # ttyd - Web terminal sharing (Tailscale-only access)
+    ../../nixos/ttyd.nix
+
+    # Syncthing - File synchronization (Tailscale-only access)
+    ../../nixos/syncthing.nix
+
+    # Hyprland - Wayland compositor (opt-in, headed systems only)
+    ../../nixos/hyprland.nix
 
     # code-server - Browser-based VS Code
     ../../nixos/code-server.nix
@@ -58,8 +68,25 @@
   # Machine identity - consumer can override with their preferred hostname
   networking.hostName = lib.mkDefault "devbox";
 
-  # Enable Tailscale VPN by default (can be disabled by consumer)
-  devbox.tailscale.enable = lib.mkDefault true;
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Devbox Module Defaults
+  # ─────────────────────────────────────────────────────────────────────────────
+  devbox = {
+    # Enable Tailscale VPN by default (can be disabled by consumer)
+    tailscale.enable = lib.mkDefault true;
+
+    # Enable Podman container runtime by default (bare-metal only)
+    podman.enable = lib.mkDefault true;
+
+    # Enable ttyd for terminal sharing (disabled by default, user enables as needed)
+    ttyd.enable = lib.mkDefault false;
+
+    # Enable Syncthing for file sync (disabled by default, user enables as needed)
+    syncthing.enable = lib.mkDefault false;
+
+    # Hyprland is opt-in and disabled by default (violates headless-first principle)
+    hyprland.enable = lib.mkDefault false;
+  };
 
   # Timezone default (consumer can override)
   # time.timeZone is already set to UTC in core.nix with mkDefault

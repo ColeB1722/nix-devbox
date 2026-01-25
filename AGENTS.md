@@ -13,10 +13,14 @@ nixos/                       # NixOS modules (flat structure)
 ├── ssh.nix                  # SSH hardening
 ├── firewall.nix             # iptables/nftables rules
 ├── tailscale.nix            # Tailscale VPN service
-├── docker.nix               # Docker daemon
+├── podman.nix               # Podman rootless containers (bare-metal)
+├── docker.nix               # Docker daemon (legacy, replaced by podman)
 ├── fish.nix                 # Fish shell (system-level)
 ├── users.nix                # User accounts + Home Manager integration
-└── code-server.nix          # Per-user code-server instances
+├── code-server.nix          # Per-user code-server instances
+├── ttyd.nix                 # Web terminal sharing (Tailscale-only)
+├── syncthing.nix            # File synchronization (Tailscale-only)
+└── hyprland.nix             # Wayland compositor (opt-in, headed only)
 
 darwin/                      # nix-darwin modules (planned)
 └── README.md                # Implementation notes
@@ -24,10 +28,10 @@ darwin/                      # nix-darwin modules (planned)
 # ─── Shared User Config (Home Manager) ─────────────────────
 home/
 ├── modules/                 # Reusable HM building blocks
-│   ├── cli.nix              # Core CLI tools (bat, eza, fzf, etc.)
+│   ├── cli.nix              # Core CLI tools (bat, eza, fzf, yazi, etc.)
 │   ├── fish.nix             # Fish shell config (aliases, abbrs)
 │   ├── git.nix              # Git + lazygit + gh
-│   └── dev.nix              # Dev tools (neovim, zellij, AI tools)
+│   └── dev.nix              # Dev tools (neovim, zellij, AI tools, Rust)
 ├── profiles/                # Composable bundles
 │   ├── minimal.nix          # cli + fish + git
 │   └── developer.nix        # minimal + dev tools
@@ -112,7 +116,8 @@ Key differences from bare-metal:
 - No hardware-configuration.nix needed
 - Tailscale runs inside WSL (uses wireguard-go)
 - Custom firewall config (allows SSH on port 22)
-- No Docker module (uses Docker Desktop on Windows host)
+- No Docker/Podman module (uses Docker Desktop on Windows host)
+- No Hyprland (no display support in WSL)
 
 ## Adding a New User
 
@@ -207,18 +212,22 @@ Port assignments are defined in `lib/users.nix` under `codeServerPorts`.
 | `tailscale.nix` | Tailscale VPN service |
 | `ssh.nix` | Hardened SSH (key-only, no root) |
 | `fish.nix` | Fish shell system enablement |
-| `docker.nix` | Docker daemon + auto-prune |
+| `podman.nix` | Podman rootless containers (bare-metal only) |
+| `docker.nix` | Docker daemon + auto-prune (legacy) |
 | `users.nix` | User accounts + Home Manager |
 | `code-server.nix` | Per-user VS Code in browser |
+| `ttyd.nix` | Web terminal sharing (Tailscale-only) |
+| `syncthing.nix` | File synchronization service (Tailscale-only) |
+| `hyprland.nix` | Wayland compositor (opt-in, headed systems) |
 
 ### Home Manager Modules (`home/modules/`)
 
 | Module | Purpose |
 |--------|---------|
-| `cli.nix` | Core CLI tools (ripgrep, fd, bat, eza, fzf, direnv) |
+| `cli.nix` | Core CLI tools (ripgrep, fd, bat, eza, fzf, yazi, direnv) |
 | `fish.nix` | Fish shell config (aliases, abbreviations) |
 | `git.nix` | Git config + lazygit + GitHub CLI |
-| `dev.nix` | Dev tools (neovim, zellij, tmux, AI tools, runtimes) |
+| `dev.nix` | Dev tools (neovim, zellij, tmux, AI tools, Rust, runtimes) |
 
 ### Home Manager Profiles (`home/profiles/`)
 
@@ -230,6 +239,8 @@ Port assignments are defined in `lib/users.nix` under `codeServerPorts`.
 ## Active Technologies
 - Nix (flakes), NixOS 25.05 + nixpkgs, home-manager, nixos-wsl, FlakeHub (007-library-flake-architecture)
 - N/A (configuration-only, no runtime storage) (007-library-flake-architecture)
+- Nix (flakes), NixOS 25.05 + nixpkgs, home-manager, nixos-wsl, (future: nix-darwin) (008-extended-devtools)
 
 ## Recent Changes
+- 008-extended-devtools: Added goose-cli, Rust toolchain, yazi, Podman, ttyd, Syncthing, Hyprland modules
 - 007-library-flake-architecture: Added Nix (flakes), NixOS 25.05 + nixpkgs, home-manager, nixos-wsl, FlakeHub

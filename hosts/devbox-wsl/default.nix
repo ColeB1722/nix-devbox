@@ -59,6 +59,12 @@
     # code-server - Browser-based VS Code
     ../../nixos/code-server.nix
 
+    # ttyd - Web terminal sharing (Tailscale-only access)
+    ../../nixos/ttyd.nix
+
+    # Syncthing - File synchronization (Tailscale-only access)
+    ../../nixos/syncthing.nix
+
     # Note: Docker module (../../nixos/docker.nix) is NOT imported for WSL
     # WSL uses Docker Desktop on the Windows host instead
     # See: https://docs.docker.com/desktop/wsl/
@@ -150,11 +156,25 @@
   # After first rebuild, manually authenticate:
   #   sudo tailscale up --authkey=<auth_key>
 
-  # Enable Tailscale with WSL-compatible settings
-  devbox.tailscale = {
-    enable = lib.mkDefault true;
-    # No routing features needed for basic connectivity
-    useRoutingFeatures = lib.mkDefault "none";
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Devbox Module Defaults
+  # ─────────────────────────────────────────────────────────────────────────────
+  devbox = {
+    # Enable Tailscale with WSL-compatible settings
+    tailscale = {
+      enable = lib.mkDefault true;
+      # No routing features needed for basic connectivity
+      useRoutingFeatures = lib.mkDefault "none";
+    };
+
+    # Enable ttyd for terminal sharing (disabled by default, user enables as needed)
+    ttyd.enable = lib.mkDefault false;
+
+    # Enable Syncthing for file sync (disabled by default, user enables as needed)
+    syncthing.enable = lib.mkDefault false;
+
+    # Note: Podman is NOT available on WSL - use Docker Desktop on Windows host
+    # Note: Hyprland is NOT available on WSL - no display support
   };
 
   # Use default TUN mode (wireguard-go creates tailscale0 interface)

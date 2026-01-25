@@ -1,19 +1,14 @@
-# Core Module - Base System Configuration
+# NixOS Core Module - Base System Configuration
 #
-# This module provides foundational system settings shared across all hosts.
-# It enables Nix flakes, sets locale/timezone defaults, and configures the
-# Nix store for optimization.
+# Foundational system settings shared across all NixOS hosts.
+# Enables Nix flakes, sets locale/timezone defaults, and configures
+# the Nix store for optimization.
 #
 # Constitution alignment:
 #   - Principle I: Declarative Configuration (all settings in Nix)
 #   - Principle V: Documentation as Code (inline comments)
 
-{
-  _config,
-  lib,
-  _pkgs,
-  ...
-}:
+{ lib, ... }:
 
 {
   # Enable experimental features for flakes support

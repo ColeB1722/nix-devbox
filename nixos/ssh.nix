@@ -1,6 +1,6 @@
-# SSH Security Module - Hardened SSH Server Configuration
+# NixOS SSH Module - Hardened SSH Server Configuration
 #
-# This module configures OpenSSH with maximum hardening for a headless server.
+# Configures OpenSSH with maximum hardening for a headless server.
 # Password authentication is disabled; only key-based auth is permitted.
 #
 # Constitution alignment:
@@ -14,7 +14,7 @@
 #   - Logging: VERBOSE (audit trail for security review)
 #
 # Note: Authorized keys are managed via users.users.<name>.openssh.authorizedKeys.keys
-# in the user module, NOT via ~/.ssh/authorized_keys files.
+# in the users module, NOT via ~/.ssh/authorized_keys files.
 
 { config, ... }:
 

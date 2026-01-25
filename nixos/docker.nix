@@ -1,6 +1,6 @@
-# Docker Module - Container Runtime Configuration
+# NixOS Docker Module - Container Runtime Configuration
 #
-# This module enables Docker for container-based development workflows.
+# Enables Docker for container-based development workflows.
 # Users in the 'docker' group can run containers without sudo.
 #
 # Constitution alignment:
@@ -11,16 +11,8 @@
 #
 # Note: This module is NOT imported on WSL configurations because WSL uses
 # Docker Desktop on the Windows host. See hosts/devbox-wsl/default.nix.
-#
-# Feature: 005-devtools-config (FR-007, FR-008, FR-009)
-# Feature: 006-multi-user-support (updated assertions for multi-user)
 
-{
-  config,
-  _lib,
-  _pkgs,
-  ...
-}:
+{ config, ... }:
 
 {
   # ─────────────────────────────────────────────────────────────────────────────
@@ -53,14 +45,14 @@
       assertion = builtins.elem "docker" (config.users.users.coal.extraGroups or [ ]);
       message = ''
         Docker module requires user 'coal' to be in the 'docker' group.
-        Add "docker" to users.users.coal.extraGroups in modules/user/default.nix
+        Add "docker" to users.users.coal.extraGroups in nixos/users.nix
       '';
     }
     {
       assertion = builtins.elem "docker" (config.users.users.violino.extraGroups or [ ]);
       message = ''
         Docker module requires user 'violino' to be in the 'docker' group.
-        Add "docker" to users.users.violino.extraGroups in modules/user/default.nix
+        Add "docker" to users.users.violino.extraGroups in nixos/users.nix
       '';
     }
   ];

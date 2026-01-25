@@ -1,8 +1,8 @@
-# Shell Module - System-Level Fish Shell Configuration
+# NixOS Fish Module - System-Level Fish Shell Configuration
 #
-# This module enables Fish shell at the system level, adding it to /etc/shells.
-# User-level Fish configuration (aliases, abbreviations, etc.) is managed in
-# home/default.nix via Home Manager's programs.fish module.
+# Enables Fish shell at the system level, adding it to /etc/shells.
+# User-level Fish configuration (aliases, abbreviations, etc.) is managed
+# via Home Manager's programs.fish module in home/modules/fish.nix.
 #
 # Constitution alignment:
 #   - Principle I: Declarative Configuration (shell in Nix)
@@ -14,10 +14,8 @@
 #   - Superior out-of-box experience with syntax highlighting and autocompletions
 #   - Better interactive features than bash/zsh without extensive configuration
 #   - Excellent Home Manager integration via programs.fish
-#
-# Feature: 005-devtools-config (FR-001, FR-002, FR-003)
 
-{ _config, ... }:
+_:
 
 {
   # Enable Fish shell system-wide

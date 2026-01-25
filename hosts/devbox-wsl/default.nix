@@ -22,8 +22,6 @@
 # SSH Access:
 #   From any machine on your tailnet:
 #     ssh coal@<windows-hostname>  # or the Tailscale IP
-#
-# Feature 006-multi-user-support: Updated for multi-user (coal, violino)
 
 {
   lib,
@@ -33,24 +31,31 @@
 
 {
   imports = [
+    # ─────────────────────────────────────────────────────────────────────────
+    # NixOS Modules (flattened structure)
+    # ─────────────────────────────────────────────────────────────────────────
+
     # Core system settings (locale, timezone, nix settings)
-    ../../modules/core
+    ../../nixos/core.nix
 
     # Security hardening for SSH
-    ../../modules/security/ssh.nix
+    ../../nixos/ssh.nix
 
-    # User account and Home Manager
-    ../../modules/user
+    # User accounts and Home Manager
+    ../../nixos/users.nix
 
     # Tailscale VPN (runs inside WSL with wireguard-go for TUN support)
-    ../../modules/networking/tailscale.nix
+    ../../nixos/tailscale.nix
 
-    # Shell configuration (Fish) - Feature 005
-    ../../modules/shell
+    # Shell configuration (Fish)
+    ../../nixos/fish.nix
 
-    # Note: Docker module (../../modules/docker) is NOT imported for WSL
+    # Note: Docker module (../../nixos/docker.nix) is NOT imported for WSL
     # WSL uses Docker Desktop on the Windows host instead
     # See: https://docs.docker.com/desktop/wsl/
+
+    # Note: Firewall module (../../nixos/firewall.nix) is NOT imported for WSL
+    # WSL has custom firewall config below
   ];
 
   # ─────────────────────────────────────────────────────────────────────────────
@@ -60,7 +65,7 @@
   # Enable WSL integration
   wsl = {
     enable = true;
-    defaultUser = "coal"; # Primary admin user (Feature 006)
+    defaultUser = "coal"; # Primary admin user
 
     # Start menu launchers for GUI apps (if any)
     startMenuLaunchers = false;

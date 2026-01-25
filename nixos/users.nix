@@ -1,19 +1,12 @@
-# User Module - Multi-User Account and Home Manager Integration
+# NixOS Users Module - Multi-User Account Configuration
 #
-# This module creates user accounts for coal (primary admin) and violino (secondary user)
-# and integrates Home Manager for per-user environment management.
-#
-# SSH public keys are hardcoded directly in this file. This is safe because:
-#   - Public keys are designed to be shared (that's why they're called "public")
-#   - They cannot be used to impersonate you or gain access
-#   - This is standard practice in NixOS configurations
+# Creates user accounts and integrates Home Manager for per-user environment
+# management. User data (SSH keys, UIDs, etc.) is sourced from lib/users.nix.
 #
 # Constitution alignment:
 #   - Principle I: Declarative Configuration (users managed in Nix)
 #   - Principle III: Security by Default (SSH keys required, password auth disabled)
 #   - Principle V: Documentation as Code (inline comments)
-#
-# Feature 006-multi-user-support: Multi-user support with hardcoded SSH public keys
 
 {
   config,
@@ -22,19 +15,7 @@
 }:
 
 let
-  # ─────────────────────────────────────────────────────────────────────────────
-  # SSH Public Keys
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Public keys are safe to commit - they're designed to be shared publicly.
-  # Only private keys must be kept secret.
-
-  # coal's SSH public key
-  coalKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMYEMoAMxPAGD4AzBPCAYV6UiHrAeMm/AJIGXKCikkuc";
-
-  # violino's SSH public key
-  # TODO: Replace with violino's actual public key
-  violinoKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderReplaceWithViolinoKey";
-
+  users = import ../lib/users.nix;
 in
 {
   # ─────────────────────────────────────────────────────────────────────────────
@@ -63,25 +44,24 @@ in
     # coal has full admin access: sudo (wheel), docker, and code-server on port 8080
     coal = {
       isNormalUser = true;
-      description = "coal - Primary Administrator";
-      uid = 1000; # Explicit UID for consistency
+      inherit (users.coal) description uid;
 
       # Group memberships:
       # - wheel: sudo access for system administration
-      # - networkmanager: network configuration
       # - docker: run containers without sudo
+      # - plus any extra groups from lib/users.nix
       extraGroups = [
         "wheel"
-        "networkmanager"
         "docker"
-      ];
+      ]
+      ++ users.coal.extraGroups;
 
       # Home directory with restricted permissions (700)
-      home = "/home/coal";
+      home = "/home/${users.coal.name}";
       createHome = true;
 
-      # SSH authorized keys (from environment variable)
-      openssh.authorizedKeys.keys = [ coalKey ];
+      # SSH authorized keys from lib/users.nix
+      openssh.authorizedKeys.keys = users.coal.sshKeys;
 
       # Default shell - Fish for modern CLI experience
       shell = pkgs.fish;
@@ -94,22 +74,22 @@ in
     # code-server on port 8081
     violino = {
       isNormalUser = true;
-      description = "violino - Secondary User";
-      uid = 1001; # Explicit UID for consistency
+      inherit (users.violino) description uid;
 
       # Group memberships:
       # - docker: run containers without sudo
       # - NO wheel: no sudo access (security requirement)
       extraGroups = [
         "docker"
-      ];
+      ]
+      ++ users.violino.extraGroups;
 
       # Home directory with restricted permissions (700)
-      home = "/home/violino";
+      home = "/home/${users.violino.name}";
       createHome = true;
 
-      # SSH authorized keys (from environment variable)
-      openssh.authorizedKeys.keys = [ violinoKey ];
+      # SSH authorized keys from lib/users.nix
+      openssh.authorizedKeys.keys = users.violino.sshKeys;
 
       # Default shell - Fish for modern CLI experience
       shell = pkgs.fish;
@@ -132,10 +112,10 @@ in
   # Home Manager Configuration
   # ─────────────────────────────────────────────────────────────────────────────
   # Each user gets their own Home Manager configuration that imports the common
-  # config and adds user-specific settings (git identity, custom abbreviations)
+  # profile and adds user-specific settings (git identity, custom abbreviations)
 
   home-manager.users = {
-    coal = import ../../home/coal.nix;
-    violino = import ../../home/violino.nix;
+    coal = import ../home/users/coal.nix;
+    violino = import ../home/users/violino.nix;
   };
 }

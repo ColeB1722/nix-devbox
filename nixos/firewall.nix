@@ -1,6 +1,6 @@
-# Networking Module - Firewall and Network Configuration
+# NixOS Firewall Module - Network Security Configuration
 #
-# This module configures the system firewall with a secure default-deny policy.
+# Configures the system firewall with a secure default-deny policy.
 # Only Tailscale traffic is trusted; no public ports are exposed.
 #
 # Constitution alignment:

@@ -10,16 +10,10 @@
 # To deploy:
 #   1. Edit hardware-configuration.nix.example with your disk UUIDs and hardware
 #      (or generate with: nixos-generate-config --show-hardware-config)
-#   2. Update the SSH key in modules/user/default.nix
+#   2. Update the SSH key in lib/users.nix
 #   3. Run: sudo nixos-rebuild switch --flake .#devbox
 
-{
-  _config,
-  _lib,
-  pkgs,
-  _inputs,
-  ...
-}:
+{ ... }:
 
 {
   imports = [
@@ -28,28 +22,32 @@
     # Or edit this file directly with your hardware config
     ./hardware-configuration.nix.example
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # NixOS Modules (flattened structure)
+    # ─────────────────────────────────────────────────────────────────────────
+
     # Core system settings
-    ../../modules/core
+    ../../nixos/core.nix
 
     # Networking and firewall
-    ../../modules/networking
-    ../../modules/networking/tailscale.nix
+    ../../nixos/firewall.nix
+    ../../nixos/tailscale.nix
 
     # Security hardening
-    ../../modules/security/ssh.nix
+    ../../nixos/ssh.nix
 
-    # User account and Home Manager
-    ../../modules/user
+    # User accounts and Home Manager
+    ../../nixos/users.nix
 
-    # Shell configuration (Fish) - Feature 005
-    ../../modules/shell
+    # Shell configuration (Fish)
+    ../../nixos/fish.nix
 
-    # Docker container runtime - Feature 005
+    # Docker container runtime
     # Note: NOT included in WSL config (uses Docker Desktop on Windows host)
-    ../../modules/docker
+    ../../nixos/docker.nix
 
-    # code-server - Browser-based VS Code - Feature 005
-    ../../modules/services/code-server.nix
+    # code-server - Browser-based VS Code
+    ../../nixos/code-server.nix
   ];
 
   # Machine identity
@@ -62,7 +60,5 @@
   # time.timeZone = "America/New_York";
 
   # Machine-specific packages (beyond what modules provide)
-  environment.systemPackages = with pkgs; [
-    # Add machine-specific packages here
-  ];
+  # environment.systemPackages = [ ];
 }

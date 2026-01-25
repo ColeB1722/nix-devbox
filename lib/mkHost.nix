@@ -102,8 +102,8 @@ _:
                       userEmail = users.${name}.email;
                     };
 
-                    # Required by Home Manager
-                    home.stateVersion = "25.05";
+                    # Required by Home Manager (use mkDefault to allow profile overrides)
+                    home.stateVersion = nixpkgs.lib.mkDefault "25.05";
                   };
               }) users.allUserNames
             );
@@ -197,7 +197,7 @@ _:
                       userEmail = users.${name}.email;
                     };
 
-                    home.stateVersion = "25.05";
+                    home.stateVersion = nixpkgs.lib.mkDefault "25.05";
                   };
               }) users.allUserNames
             );

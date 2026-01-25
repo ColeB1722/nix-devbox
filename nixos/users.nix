@@ -132,10 +132,11 @@ in
           };
 
           # Basic home settings
+          # Note: home.stateVersion is set by profiles (developer.nix, minimal.nix)
+          # to avoid conflicts when consumer flake also imports profiles
           home = {
             username = name;
             homeDirectory = "/home/${name}";
-            stateVersion = "25.05";
           };
         };
       }) users.allUserNames

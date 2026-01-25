@@ -75,7 +75,12 @@
   # Note: wsl.defaultUser is set dynamically from the first admin user
   wsl = {
     enable = true;
-    defaultUser = lib.mkDefault (builtins.head users.adminUserNames);
+    defaultUser = lib.mkDefault (
+      if users.adminUserNames == [ ] then
+        throw "WSL defaultUser requires at least one admin in users.adminUserNames"
+      else
+        builtins.head users.adminUserNames
+    );
 
     # Start menu launchers for GUI apps (if any)
     startMenuLaunchers = lib.mkDefault false;

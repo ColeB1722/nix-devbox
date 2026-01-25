@@ -25,7 +25,6 @@
 
 {
   config,
-  lib,
   pkgs,
   users,
   ...
@@ -69,19 +68,28 @@ let
     path = codeServerPackages;
   };
 
-  # Get port for a user (with fallback for users without explicit port assignment)
+  # Get port for a user (requires explicit assignment in users.codeServerPorts)
+  # We require explicit ports to avoid fragile index-based assignment that breaks
+  # when users.allUserNames order changes.
   getPort =
-    name: index:
+    name:
     if users ? codeServerPorts && users.codeServerPorts ? ${name} then
       users.codeServerPorts.${name}
     else
-      8080 + index;
+      throw ''
+        code-server: No port assigned for user '${name}'.
+        Add an entry to users.codeServerPorts in your users.nix:
+
+          codeServerPorts = {
+            ${name} = 8080;  # or another available port
+          };
+      '';
 
   # Create services for all users
   userServices = builtins.listToAttrs (
-    lib.imap0 (index: name: {
+    map (name: {
       name = "code-server-${name}";
-      value = mkCodeServerService name (getPort name index);
+      value = mkCodeServerService name (getPort name);
     }) users.allUserNames
   );
 
@@ -115,7 +123,7 @@ in
   # sessions are independent.
   #
   # Port assignments come from users.codeServerPorts (defined in consumer's users.nix)
-  # If a user doesn't have an explicit port, they get 8080 + their index in allUserNames
+  # All users MUST have explicit port assignments to avoid fragile index-based defaults
 
   systemd.services = userServices;
 

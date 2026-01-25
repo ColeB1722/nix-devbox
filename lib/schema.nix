@@ -115,6 +115,7 @@ rec {
     "allUserNames"
     "adminUserNames"
     "codeServerPorts"
+    "containers"
   ];
 
   getUserNames =

@@ -240,6 +240,8 @@ Port assignments are defined in `lib/users.nix` under `codeServerPorts`.
 - Nix (flakes), NixOS 25.05 + nixpkgs, home-manager, nixos-wsl, FlakeHub (007-library-flake-architecture)
 - N/A (configuration-only, no runtime storage) (007-library-flake-architecture)
 - Nix (flakes), NixOS 25.05 + nixpkgs, home-manager, nixos-wsl, (future: nix-darwin) (008-extended-devtools)
+- Nix (flakes), NixOS 25.05, nix-darwin + nixpkgs, home-manager, nixos-wsl, nix-darwin, dockertools (009-devcontainer-orchestrator)
+- Podman volumes for container persistence, local filesystem for workstations (009-devcontainer-orchestrator)
 
 ## Recent Changes
 - 008-extended-devtools: Added goose-cli, Rust toolchain, yazi, Podman, ttyd, Syncthing, Hyprland modules

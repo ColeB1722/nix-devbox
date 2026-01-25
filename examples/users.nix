@@ -68,4 +68,37 @@
     exampleuser = 8080;
     exampledev = 8081;
   };
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Container Orchestrator Configuration (009-devcontainer-orchestrator)
+  # ─────────────────────────────────────────────────────────────────────────────
+  # These settings control dev container behavior on the orchestrator.
+  # Consumer should override opVault with their actual 1Password vault name.
+  #
+  # Required 1Password setup (done by consumer):
+  #   1. Create Service Account with read access to the vault
+  #   2. Set OP_SERVICE_ACCOUNT_TOKEN on orchestrator (systemd credential, agenix, etc.)
+  #   3. Create items: {username}-tailscale-authkey for each user
+  #
+  # Required Tailscale setup (done by consumer in homelab-iac):
+  #   1. Create tags: tag:devcontainer, tag:{username}-container
+  #   2. Create auth keys with tags, reusable=true, ephemeral=true
+  #   3. Configure ACLs for user isolation
+
+  containers = {
+    # 1Password vault containing Tailscale auth keys
+    # Item naming convention: {username}-tailscale-authkey
+    # Reference format: op://{opVault}/{username}-tailscale-authkey/password
+    opVault = "DevBox";
+
+    # Resource limits
+    maxPerUser = 5; # Max containers per user
+    maxGlobal = 7; # Max containers on orchestrator (based on host resources)
+    defaultCpu = 2; # CPU cores per container
+    defaultMemory = "4G"; # RAM per container
+
+    # Lifecycle automation
+    idleStopDays = 7; # Auto-stop after N days of inactivity
+    stoppedDestroyDays = 14; # Auto-destroy after N days in stopped state
+  };
 }

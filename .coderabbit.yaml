@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit Configuration
+# https://docs.coderabbit.ai/reference/configuration
+#
+# This file configures CodeRabbit's AI-powered code review behavior.
+
+language: "en-US"
+
+reviews:
+  profile: "chill"
+
+  # Exclude specification and template directories from code review
+  # These contain planning documents and tooling, not code to be reviewed
+  path_filters:
+    - "!.specify/**"
+    - "!specs/**"
+
+  # Review settings
+  high_level_summary: true
+  review_status: true
+  collapse_walkthrough: true
+  sequence_diagrams: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+chat:
+  auto_reply: true

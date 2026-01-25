@@ -1,27 +1,28 @@
 # Host Configuration - devbox
 #
-# This is the machine-specific configuration for the devbox.
-# It imports all reusable modules and sets machine-specific overrides.
+# This is the host DEFINITION (template) for bare-metal/VM devbox machines.
+# It imports all reusable modules and sets machine-specific defaults.
+#
+# IMPORTANT: This is a library module - it does NOT include hardware configuration.
+# Consumers must provide their own hardware-configuration.nix.
 #
 # Constitution alignment:
-#   - Principle IV: Modular and Reusable (imports composable modules)
+#   - Principle IV: Modular and Reusable (importable by consumer flakes)
 #   - Principle V: Documentation as Code (inline comments)
 #
-# To deploy:
-#   1. Edit hardware-configuration.nix.example with your disk UUIDs and hardware
-#      (or generate with: nixos-generate-config --show-hardware-config)
-#   2. Update the SSH key in lib/users.nix
-#   3. Run: sudo nixos-rebuild switch --flake .#devbox
+# Required specialArgs:
+#   users - User data attrset (see lib/schema.nix for schema)
+#
+# Consumer usage:
+#   modules = [
+#     nix-devbox.hosts.devbox
+#     ./hardware/devbox.nix  # Consumer provides hardware config
+#   ];
 
-{ ... }:
+{ lib, ... }:
 
 {
   imports = [
-    # Hardware configuration (template - customize for your machine)
-    # To use: copy to hardware-configuration.nix.local (gitignored) and import that instead
-    # Or edit this file directly with your hardware config
-    ./hardware-configuration.nix.example
-
     # ─────────────────────────────────────────────────────────────────────────
     # NixOS Modules (flattened structure)
     # ─────────────────────────────────────────────────────────────────────────
@@ -50,15 +51,30 @@
     ../../nixos/code-server.nix
   ];
 
-  # Machine identity
-  networking.hostName = "devbox";
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Machine Defaults (overridable by consumer)
+  # ─────────────────────────────────────────────────────────────────────────────
 
-  # Enable Tailscale VPN (can be disabled by setting to false)
-  devbox.tailscale.enable = true;
+  # Machine identity - consumer can override with their preferred hostname
+  networking.hostName = lib.mkDefault "devbox";
 
-  # Override timezone if needed (default is UTC from core module)
-  # time.timeZone = "America/New_York";
+  # Enable Tailscale VPN by default (can be disabled by consumer)
+  devbox.tailscale.enable = lib.mkDefault true;
 
-  # Machine-specific packages (beyond what modules provide)
-  # environment.systemPackages = [ ];
+  # Timezone default (consumer can override)
+  # time.timeZone is already set to UTC in core.nix with mkDefault
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Note: Hardware Configuration
+  # ─────────────────────────────────────────────────────────────────────────────
+  # This host definition does NOT include hardware configuration.
+  # Consumers MUST provide their own hardware-configuration.nix:
+  #
+  #   modules = [
+  #     nix-devbox.hosts.devbox
+  #     ./hardware/devbox.nix  # Your hardware config
+  #   ];
+  #
+  # Generate hardware config with:
+  #   nixos-generate-config --show-hardware-config > hardware/devbox.nix
 }

@@ -24,8 +24,18 @@
     auto-optimise-store = true;
   };
 
-  # Allow unfree packages (some common tools require this)
-  nixpkgs.config.allowUnfree = true;
+  # Automatic garbage collection to prevent disk fill-up
+  # Runs weekly, removes generations older than 30 days
+  # Consumers can override or disable via lib.mkForce
+  nix.gc = {
+    automatic = lib.mkDefault true;
+    dates = lib.mkDefault "weekly";
+    options = lib.mkDefault "--delete-older-than 30d";
+  };
+
+  # Note: Unfree packages are controlled via allowUnfreePredicate in the
+  # consumer's flake.nix (or mkNixpkgsConfig in this repo's flake.nix).
+  # This ensures explicit allowlisting rather than blanket allowUnfree.
 
   # Timezone configuration
   # Default to UTC for server consistency; override in host config if needed
@@ -50,9 +60,8 @@
   };
   boot.loader.efi.canTouchEfiVariables = lib.mkDefault true;
 
-  # NixOS state version
-  # This determines which NixOS defaults are used for stateful data
-  # Should match the NixOS version used for initial installation
-  # Use mkDefault so hosts can override for fresh installations
-  system.stateVersion = lib.mkDefault "24.05";
+  # Note: system.stateVersion is NOT set here - it should be set in:
+  # - Hardware configuration (for bare-metal/VM)
+  # - Host configuration (for WSL or other specialized hosts)
+  # This ensures each deployment uses the appropriate version for its initial install.
 }

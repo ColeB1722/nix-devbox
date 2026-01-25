@@ -29,7 +29,34 @@ darwin/
 Home Manager works identically on Darwin - the `home/` directory modules
 are fully compatible and can be reused without modification.
 
+## Implementation Notes
+
+### Consider `flake-parts` at Darwin Implementation Time
+
+When adding Darwin support, evaluate whether to adopt [flake-parts](https://github.com/hercules-ci/flake-parts).
+
+**Current approach** (`forEachSystem` + manual outputs) is working well for NixOS-only.
+However, Darwin will introduce:
+
+- Duplicate `forEachSystem` patterns for Darwin-specific outputs
+- `darwinConfigurations` alongside `nixosConfigurations`
+- Potentially more per-system outputs (packages, checks)
+
+**flake-parts benefits at that scale:**
+
+- `perSystem` eliminates boilerplate for multi-system outputs
+- Module-based flake composition
+- Cleaner separation of Darwin vs NixOS concerns
+
+**Decision criteria:**
+
+- If Darwin implementation is straightforward → keep current approach
+- If `flake.nix` becomes unwieldy with duplication → refactor to flake-parts
+
+This is a refactor opportunity, not a blocker for Darwin support.
+
 ## Resources
 
 - [nix-darwin](https://github.com/LnL7/nix-darwin)
 - [nix-darwin options](https://daiderd.com/nix-darwin/manual/index.html)
+- [flake-parts](https://github.com/hercules-ci/flake-parts)

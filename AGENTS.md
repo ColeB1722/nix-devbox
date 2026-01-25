@@ -226,3 +226,10 @@ Port assignments are defined in `lib/users.nix` under `codeServerPorts`.
 |---------|----------|
 | `minimal.nix` | cli + fish + git |
 | `developer.nix` | minimal + dev |
+
+## Active Technologies
+- Nix (flakes), NixOS 25.05 + nixpkgs, home-manager, nixos-wsl, FlakeHub (007-library-flake-architecture)
+- N/A (configuration-only, no runtime storage) (007-library-flake-architecture)
+
+## Recent Changes
+- 007-library-flake-architecture: Added Nix (flakes), NixOS 25.05 + nixpkgs, home-manager, nixos-wsl, FlakeHub

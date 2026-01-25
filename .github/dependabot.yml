@@ -1,0 +1,34 @@
+# Dependabot configuration for automated dependency updates
+#
+# This configuration automatically creates PRs to update GitHub Actions
+# versions, keeping CI tooling current with security fixes and features.
+#
+# Workflow integration:
+#   - Dependabot creates PRs targeting the default branch (main)
+#   - PRs trigger ci-quick job (format + check)
+#   - Branch protection requires CI to pass before merge
+#
+# Why only github-actions?
+#   - Nix flake inputs are managed via `nix flake update` (see justfile)
+#   - Future: Consider DeterminateSystems/update-flake-lock for automated
+#     flake.lock updates (see docs/future-enhancements.md)
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/New_York
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "ci"
+    # Group all action updates into a single PR to reduce noise
+    groups:
+      github-actions:
+        patterns:
+          - "*"

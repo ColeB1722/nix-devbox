@@ -24,8 +24,18 @@
     auto-optimise-store = true;
   };
 
-  # Allow unfree packages (some common tools require this)
-  nixpkgs.config.allowUnfree = true;
+  # Automatic garbage collection to prevent disk fill-up
+  # Runs weekly, removes generations older than 30 days
+  # Consumers can override or disable via lib.mkForce
+  nix.gc = {
+    automatic = lib.mkDefault true;
+    dates = lib.mkDefault "weekly";
+    options = lib.mkDefault "--delete-older-than 30d";
+  };
+
+  # Note: Unfree packages are controlled via allowUnfreePredicate in the
+  # consumer's flake.nix (or mkNixpkgsConfig in this repo's flake.nix).
+  # This ensures explicit allowlisting rather than blanket allowUnfree.
 
   # Timezone configuration
   # Default to UTC for server consistency; override in host config if needed

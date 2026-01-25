@@ -1,6 +1,6 @@
-# Tailscale Module - VPN Service Configuration
+# NixOS Tailscale Module - VPN Service Configuration
 #
-# This module enables Tailscale for secure remote access to the devbox.
+# Enables Tailscale for secure remote access to the devbox.
 # Tailscale provides zero-config VPN using WireGuard under the hood.
 #
 # Constitution alignment:
@@ -10,8 +10,8 @@
 #   - Principle V: Documentation as Code (inline comments)
 #
 # Usage:
-#   To enable:  Import this module in your host configuration
-#   To disable: Remove from imports or set devbox.tailscale.enable = false
+#   To enable:  Import this module and set devbox.tailscale.enable = true
+#   To disable: Set devbox.tailscale.enable = false
 #
 # Post-deployment:
 #   Run `sudo tailscale up` once to authenticate with your tailnet.

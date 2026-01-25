@@ -18,18 +18,20 @@
 #           ──PR──► main (ci-quick: uses cache, fast)
 #           ──merge──► publish (to FlakeHub with resolved store paths)
 #
-# FUTURE: Branch Protection (TODO when converting to public repo)
+# Branch Protection (IMPLEMENTED)
 # ─────────────────────────────────────────────────────────────────
-# Currently, this workflow trusts that developers use the PR flow.
-# When branch protection is enabled, configure:
-#   main:
-#     - Require pull request reviews before merging
-#     - Require status checks: "Quick CI (Format, Check)"
-#     - Do not allow bypassing the above settings
-#   release/*:
-#     - Require pull request reviews before merging
-#     - Require status checks: "Full CI (Format, Check, Build)"
-#     - Do not allow bypassing the above settings
+# The following branch protection rules enforce this workflow:
+#
+#   main (branch protection):
+#     - Require PR with 1 approval
+#     - Required status check: "Quick CI (Format, Check)"
+#     - Enforce on admins: true
+#     - Force pushes: blocked
+#
+#   release/* (ruleset):
+#     - Require PR
+#     - Required status check: "Full CI (Format, Check, Build)"
+#     - Strict status checks: true
 #
 # This ensures the PR-only validation model is enforced, not just convention.
 # ─────────────────────────────────────────────────────────────────
@@ -45,10 +47,10 @@ on:
   pull_request:
     branches:
       - main
-      - 'release/**'
+      - "release/**"
   push:
     branches:
-      - main  # Only for publish trigger after PR merge
+      - main # Only for publish trigger after PR merge
 
 # Required for FlakeHub Cache and FlakeHub publish authentication
 permissions:
@@ -77,6 +79,9 @@ jobs:
 
       - name: Check formatting
         run: nix fmt -- --check .
+
+      - name: Check flake health
+        uses: DeterminateSystems/flake-checker-action@main
 
       - name: Run flake check
         run: nix flake check
@@ -108,6 +113,9 @@ jobs:
 
       - name: Check formatting
         run: nix fmt -- --check .
+
+      - name: Check flake health
+        uses: DeterminateSystems/flake-checker-action@main
 
       - name: Run flake check
         run: nix flake check

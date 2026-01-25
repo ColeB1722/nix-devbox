@@ -1,24 +1,23 @@
-# Docker Module - Container Runtime Configuration
+# NixOS Docker Module - Container Runtime Configuration
 #
-# This module enables Docker for container-based development workflows.
+# Enables Docker for container-based development workflows.
 # Users in the 'docker' group can run containers without sudo.
 #
 # Constitution alignment:
 #   - Principle I: Declarative Configuration (Docker in Nix)
 #   - Principle II: Headless-First Design (CLI-based container management)
-#   - Principle IV: Modular and Reusable (separate docker module)
+#   - Principle IV: Modular and Reusable (accepts user data from consumer)
 #   - Principle V: Documentation as Code (inline comments)
+#
+# Required specialArgs:
+#   users - User data attrset (see lib/schema.nix for schema)
 #
 # Note: This module is NOT imported on WSL configurations because WSL uses
 # Docker Desktop on the Windows host. See hosts/devbox-wsl/default.nix.
-#
-# Feature: 005-devtools-config (FR-007, FR-008, FR-009)
-# Feature: 006-multi-user-support (updated assertions for multi-user)
 
 {
   config,
-  _lib,
-  _pkgs,
+  users,
   ...
 }:
 
@@ -45,25 +44,17 @@
   # ─────────────────────────────────────────────────────────────────────────────
   # Security Assertions
   # ─────────────────────────────────────────────────────────────────────────────
-  # Ensure all dev users are in the docker group to avoid permission issues.
+  # Ensure all users are in the docker group to avoid permission issues.
   # This assertion helps catch misconfiguration early.
+  # The users.nix module automatically adds "docker" to all users' extraGroups.
 
-  assertions = [
-    {
-      assertion = builtins.elem "docker" (config.users.users.coal.extraGroups or [ ]);
-      message = ''
-        Docker module requires user 'coal' to be in the 'docker' group.
-        Add "docker" to users.users.coal.extraGroups in modules/user/default.nix
-      '';
-    }
-    {
-      assertion = builtins.elem "docker" (config.users.users.violino.extraGroups or [ ]);
-      message = ''
-        Docker module requires user 'violino' to be in the 'docker' group.
-        Add "docker" to users.users.violino.extraGroups in modules/user/default.nix
-      '';
-    }
-  ];
+  assertions = map (name: {
+    assertion = builtins.elem "docker" (config.users.users.${name}.extraGroups or [ ]);
+    message = ''
+      Docker module requires user '${name}' to be in the 'docker' group.
+      This should be automatic via nixos/users.nix - check your configuration.
+    '';
+  }) users.allUserNames;
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Firewall Configuration

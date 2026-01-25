@@ -1,56 +1,70 @@
 # Host Configuration - devbox-wsl
 #
-# NixOS configuration for running on Windows Subsystem for Linux (WSL2).
+# NixOS host DEFINITION (template) for Windows Subsystem for Linux (WSL2).
 # This provides a full NixOS environment accessible via SSH from your tailnet.
 #
+# IMPORTANT: This is a library module. Consumers must provide NixOS-WSL base module.
+#
 # Constitution alignment:
-#   - Principle IV: Modular and Reusable (shares modules with bare-metal devbox)
+#   - Principle IV: Modular and Reusable (importable by consumer flakes)
 #   - Principle V: Documentation as Code (inline comments)
+#
+# Required specialArgs:
+#   users - User data attrset (see lib/schema.nix for schema)
+#
+# Required consumer modules:
+#   - nixos-wsl.nixosModules.default (from github:nix-community/NixOS-WSL)
 #
 # Key differences from bare-metal devbox:
 #   - No hardware-configuration.nix (WSL handles hardware)
 #   - No bootloader configuration (Windows boots)
 #   - Tailscale uses wireguard-go (userspace TUN) instead of kernel WireGuard
 #   - Firewall configured for WSL networking
+#   - No Docker module (uses Docker Desktop on Windows host)
 #
-# Setup:
-#   1. Install NixOS-WSL: https://github.com/nix-community/NixOS-WSL
-#   2. Clone this repo inside WSL
-#   3. Run: sudo nixos-rebuild switch --flake .#devbox-wsl
-#   4. Ensure Tailscale is running on Windows and the machine is in your tailnet
-#
-# SSH Access:
-#   From any machine on your tailnet:
-#     ssh coal@<windows-hostname>  # or the Tailscale IP
-#
-# Feature 006-multi-user-support: Updated for multi-user (coal, violino)
+# Consumer usage:
+#   modules = [
+#     nixos-wsl.nixosModules.default
+#     nix-devbox.hosts.devbox-wsl
+#   ];
 
 {
   lib,
   pkgs,
+  users,
   ...
 }:
 
 {
   imports = [
+    # ─────────────────────────────────────────────────────────────────────────
+    # NixOS Modules (flattened structure)
+    # ─────────────────────────────────────────────────────────────────────────
+
     # Core system settings (locale, timezone, nix settings)
-    ../../modules/core
+    ../../nixos/core.nix
 
     # Security hardening for SSH
-    ../../modules/security/ssh.nix
+    ../../nixos/ssh.nix
 
-    # User account and Home Manager
-    ../../modules/user
+    # User accounts and Home Manager
+    ../../nixos/users.nix
 
     # Tailscale VPN (runs inside WSL with wireguard-go for TUN support)
-    ../../modules/networking/tailscale.nix
+    ../../nixos/tailscale.nix
 
-    # Shell configuration (Fish) - Feature 005
-    ../../modules/shell
+    # Shell configuration (Fish)
+    ../../nixos/fish.nix
 
-    # Note: Docker module (../../modules/docker) is NOT imported for WSL
+    # code-server - Browser-based VS Code
+    ../../nixos/code-server.nix
+
+    # Note: Docker module (../../nixos/docker.nix) is NOT imported for WSL
     # WSL uses Docker Desktop on the Windows host instead
     # See: https://docs.docker.com/desktop/wsl/
+
+    # Note: Firewall module (../../nixos/firewall.nix) is NOT imported for WSL
+    # WSL has custom firewall config below
   ];
 
   # ─────────────────────────────────────────────────────────────────────────────
@@ -58,25 +72,31 @@
   # ─────────────────────────────────────────────────────────────────────────────
 
   # Enable WSL integration
+  # Note: wsl.defaultUser is set dynamically from the first admin user
   wsl = {
     enable = true;
-    defaultUser = "coal"; # Primary admin user (Feature 006)
+    defaultUser = lib.mkDefault (
+      if users.adminUserNames == [ ] then
+        throw "WSL defaultUser requires at least one admin in users.adminUserNames"
+      else
+        builtins.head users.adminUserNames
+    );
 
     # Start menu launchers for GUI apps (if any)
-    startMenuLaunchers = false;
+    startMenuLaunchers = lib.mkDefault false;
 
     # Use Windows OpenGL drivers for GPU acceleration (optional)
     # Enable if you need GPU support for development
-    useWindowsDriver = false;
+    useWindowsDriver = lib.mkDefault false;
 
     # WSL interop settings
     interop = {
       # Include Windows PATH in WSL PATH
       # Useful for running Windows commands from WSL
-      includePath = true;
+      includePath = lib.mkDefault true;
 
       # Register binfmt for Windows executables
-      register = false;
+      register = lib.mkDefault false;
     };
 
     # Let WSL manage /etc/hosts and /etc/resolv.conf
@@ -89,15 +109,19 @@
     };
   };
 
-  # Machine identity
-  networking.hostName = "devbox-wsl";
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Machine Defaults (overridable by consumer)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Machine identity - consumer can override with their preferred hostname
+  networking.hostName = lib.mkDefault "devbox-wsl";
 
   # ─────────────────────────────────────────────────────────────────────────────
   # WSL Networking
   # ─────────────────────────────────────────────────────────────────────────────
   #
-  # WSL networking is handled by Windows. Tailscale runs on the Windows host,
-  # not inside WSL. SSH connections come through Windows networking.
+  # WSL networking is handled by Windows. Tailscale runs inside WSL,
+  # creating a tailscale0 interface via wireguard-go.
   #
   # Firewall is enabled but configured to allow local connections since
   # WSL traffic appears to come from localhost or the WSL virtual network.
@@ -124,16 +148,13 @@
   # WSL2 supports /dev/net/tun, so wireguard-go works correctly.
   #
   # After first rebuild, manually authenticate:
-  #   sudo tailscale up --authkey=<shared_auth_key>
-  #
-  # Get the auth key from homelab-iac:
-  #   cd ~/repos/homelab-iac && just output tailscale shared_auth_key
+  #   sudo tailscale up --authkey=<auth_key>
 
   # Enable Tailscale with WSL-compatible settings
   devbox.tailscale = {
-    enable = true;
+    enable = lib.mkDefault true;
     # No routing features needed for basic connectivity
-    useRoutingFeatures = "none";
+    useRoutingFeatures = lib.mkDefault "none";
   };
 
   # Use default TUN mode (wireguard-go creates tailscale0 interface)
@@ -158,5 +179,5 @@
 
   # NixOS state version - set to 25.05 for fresh WSL installations
   # Do NOT change this after initial deployment
-  system.stateVersion = "25.05";
+  system.stateVersion = lib.mkDefault "25.05";
 }

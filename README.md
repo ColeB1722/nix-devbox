@@ -1,18 +1,20 @@
 # nix-devbox
 
-A minimal, secure, modular NixOS configuration for a self-hosted remote development machine. Access via SSH over Tailscale only.
+A minimal, secure, modular Nix configuration for self-hosted development machines. Supports NixOS (bare-metal, WSL), with planned support for macOS (nix-darwin) and containers (dockertools).
 
 ## Overview
 
-This repository contains NixOS configurations for:
-- **devbox**: Bare-metal/VM development server
-- **devbox-wsl**: Windows Subsystem for Linux variant
+This repository contains configurations for:
+- **devbox**: Bare-metal/VM development server (NixOS)
+- **devbox-wsl**: Windows Subsystem for Linux variant (NixOS)
+- **macOS**: Planned via nix-darwin
+- **Containers**: Planned via dockertools
 
-Both configurations provide a consistent, declarative development environment with modern CLI tools, multi-user support, and secure remote access.
+All configurations share a common CLI toolkit via Home Manager while using platform-specific system modules.
 
 ## Features
 
-- **Multi-user support**: Separate accounts for `coal` (admin) and `violino` (user)
+- **Multi-user support**: Separate accounts for `coal` (admin) and `violino` (dev user)
 - **Per-user code-server**: Browser-based VS Code on ports 8080/8081
 - **Modern shell**: Fish with fzf, bat, eza, and smart abbreviations
 - **Development tools**: neovim, lazygit, zellij, direnv, Docker
@@ -22,39 +24,23 @@ Both configurations provide a consistent, declarative development environment wi
 
 ## Quick Start
 
-### Remote Deployment (from your machine)
-
-Deploy the latest version from FlakeHub to a remote devbox:
-
-```bash
-# Deploy without reboot
-just deploy-remote
-
-# Deploy and reboot on success
-just deploy-remote-reboot
-
-# Deploy to specific host/config
-just deploy-remote devbox-wsl devbox-wsl
-```
-
-Requires: Tailscale connection and SSH access to target host.
-
 ### Local Deployment (on the devbox)
 
 ```bash
-# Clone and deploy with SSH keys
+# Clone and deploy
 git clone https://github.com/ColeB1722/nix-devbox.git
 cd nix-devbox
-cp .env.example .env
-# Edit .env with your SSH public keys
-source .env
-sudo -E nixos-rebuild switch --flake .#devbox
+
+# For bare-metal/VM
+sudo nixos-rebuild switch --flake .#devbox
+
+# For WSL
+sudo nixos-rebuild switch --flake .#devbox-wsl
 ```
 
 ### FlakeHub Direct (no git clone)
 
 ```bash
-# On the devbox itself
 sudo nixos-rebuild switch --flake 'https://flakehub.com/f/coal-bap/nix-devbox/*#devbox'
 ```
 
@@ -70,6 +56,9 @@ just check
 # Format code
 just fmt
 
+# Build without deploying
+just build
+
 # See all targets
 just
 ```
@@ -78,31 +67,80 @@ just
 
 ```
 flake.nix                    # Flake entry point
-hosts/
-├── devbox/                  # Bare-metal configuration
-└── devbox-wsl/              # WSL2 configuration
-modules/
-├── core/                    # Base system (locale, timezone, nix)
-├── networking/              # Firewall, Tailscale
-├── security/                # SSH hardening
-├── user/                    # Multi-user accounts
-├── shell/                   # Fish shell
-├── docker/                  # Container runtime
-└── services/                # code-server
-home/
-├── common.nix               # Shared Home Manager config
-├── coal.nix                 # coal's personal config
-└── violino.nix              # violino's personal config
+
+nixos/                       # NixOS system modules (flat structure)
+├── core.nix                 # Base system (locale, timezone, nix)
+├── firewall.nix             # Firewall configuration
+├── tailscale.nix            # Tailscale VPN service
+├── ssh.nix                  # SSH hardening
+├── fish.nix                 # Fish shell (system-level)
+├── docker.nix               # Container runtime
+├── users.nix                # User accounts + Home Manager
+└── code-server.nix          # Per-user code-server instances
+
+darwin/                      # nix-darwin modules (planned)
+
+containers/                  # dockertools builds (planned)
+
+home/                        # Home Manager configuration (shared across platforms)
+├── modules/                 # Reusable building blocks
+│   ├── cli.nix              # Core CLI tools (bat, eza, fzf, etc.)
+│   ├── fish.nix             # Fish shell config
+│   ├── git.nix              # Git + lazygit + gh
+│   └── dev.nix              # Dev tools (neovim, zellij, AI tools)
+├── profiles/                # Composable bundles
+│   ├── minimal.nix          # cli + fish + git
+│   └── developer.nix        # minimal + dev tools
+└── users/                   # Per-user configs
+    ├── coal.nix             # Admin user
+    └── violino.nix          # Dev user
+
+lib/                         # Shared data
+└── users.nix                # User metadata (SSH keys, UIDs, etc.)
+
+hosts/                       # Machine-specific configurations
+├── devbox/                  # Bare-metal/VM
+└── devbox-wsl/              # WSL2
 ```
 
-## SSH Keys
+## Architecture
 
-SSH public keys are hardcoded in `modules/user/default.nix`. This is safe because public keys are designed to be shared—only private keys must be kept secret.
+The configuration is organized around three key principles:
 
-To add or update a user's key, edit the `coalKey` or `violinoKey` variables in that module.
+1. **Platform separation**: NixOS and Darwin modules are fundamentally different, so each gets its own directory (`nixos/`, `darwin/`).
+
+2. **Home Manager as shared layer**: User-level config in `home/` works across all platforms. This is where the common CLI toolkit lives.
+
+3. **Centralized user data**: SSH keys, UIDs, and metadata live in `lib/users.nix` and are consumed by platform-specific modules.
+
+## Adding/Updating SSH Keys
+
+SSH public keys are stored in `lib/users.nix`. To update:
+
+```nix
+# lib/users.nix
+coal = {
+  # ...
+  sshKeys = [
+    "ssh-ed25519 AAAA... your-key-comment"
+  ];
+};
+```
+
+Public keys are safe to commit—only private keys must be kept secret.
+
+## Platform Support
+
+| Platform | Status | Directory |
+|----------|--------|-----------|
+| NixOS (bare-metal) | ✅ Implemented | `nixos/`, `hosts/devbox/` |
+| NixOS (WSL) | ✅ Implemented | `nixos/`, `hosts/devbox-wsl/` |
+| macOS (nix-darwin) | 🚧 Planned | `darwin/` |
+| Containers | 🚧 Planned | `containers/` |
 
 ## Resources
 
 - [NixOS Manual](https://nixos.org/manual/nixos/stable/)
 - [Home Manager](https://github.com/nix-community/home-manager)
+- [nix-darwin](https://github.com/LnL7/nix-darwin)
 - [FlakeHub](https://flakehub.com/flake/coal-bap/nix-devbox)

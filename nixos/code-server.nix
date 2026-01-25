@@ -1,38 +1,32 @@
-# code-server Module - Browser-Based VS Code (Multi-User)
+# NixOS code-server Module - Browser-Based VS Code (Multi-User)
 #
-# This module enables code-server for multiple users, providing VS Code in a
-# web browser for remote development. Each user gets their own instance on a
-# dedicated port:
-#   - coal (admin): port 8080
-#   - violino (user): port 8081
+# Enables code-server for multiple users, providing VS Code in a
+# web browser for remote development. Each user gets their own instance
+# on a dedicated port (defined in consumer's users.nix via codeServerPorts).
 #
 # Security model:
 #   - code-server binds to all interfaces (0.0.0.0)
 #   - Access control is handled by Tailscale ACLs (defined in homelab-iac)
-#   - Firewall trusts tailscale0 interface (see modules/networking/default.nix)
+#   - Firewall trusts tailscale0 interface (see nixos/firewall.nix)
 #   - No authentication in code-server itself (Tailscale provides identity)
-#
-# ACL policy (managed in homelab-iac/tailscale/main.tf):
-#   - coal (admin): can access both 8080 and 8081 (full access for troubleshooting)
-#   - violino (user): can only access 8081 (their own instance)
 #
 # Constitution alignment:
 #   - Principle I: Declarative Configuration (service in Nix, ACLs in Terraform)
 #   - Principle II: Headless-First Design (browser-based IDE, no GUI on server)
 #   - Principle III: Security by Default (Tailscale ACLs control access)
-#   - Principle IV: Modular and Reusable (separate service module)
+#   - Principle IV: Modular and Reusable (accepts user data from consumer)
 #   - Principle V: Documentation as Code (inline comments)
 #
-# Access (from any device on tailnet with appropriate ACL permissions):
-#   - coal: http://devbox:8080 or http://<tailscale-ip>:8080
-#   - violino: http://devbox:8081 or http://<tailscale-ip>:8081
+# Required specialArgs:
+#   users - User data attrset with allUserNames and codeServerPorts
 #
-# Feature: 005-devtools-config (FR-013, FR-014, FR-015)
-# Feature: 006-multi-user-support (per-user code-server instances)
+# Access (from any device on tailnet with appropriate ACL permissions):
+#   http://devbox:<port> or http://<tailscale-ip>:<port>
 
 {
   config,
   pkgs,
+  users,
   ...
 }:
 
@@ -74,6 +68,31 @@ let
     path = codeServerPackages;
   };
 
+  # Get port for a user (requires explicit assignment in users.codeServerPorts)
+  # We require explicit ports to avoid fragile index-based assignment that breaks
+  # when users.allUserNames order changes.
+  getPort =
+    name:
+    if users ? codeServerPorts && users.codeServerPorts ? ${name} then
+      users.codeServerPorts.${name}
+    else
+      throw ''
+        code-server: No port assigned for user '${name}'.
+        Add an entry to users.codeServerPorts in your users.nix:
+
+          codeServerPorts = {
+            ${name} = 8080;  # or another available port
+          };
+      '';
+
+  # Create services for all users
+  userServices = builtins.listToAttrs (
+    map (name: {
+      name = "code-server-${name}";
+      value = mkCodeServerService name (getPort name);
+    }) users.allUserNames
+  );
+
 in
 {
   # ─────────────────────────────────────────────────────────────────────────────
@@ -102,14 +121,11 @@ in
   # Each user gets their own code-server instance on a dedicated port.
   # This provides isolation - each user's extensions, settings, and terminal
   # sessions are independent.
+  #
+  # Port assignments come from users.codeServerPorts (defined in consumer's users.nix)
+  # All users MUST have explicit port assignments to avoid fragile index-based defaults
 
-  systemd.services = {
-    # coal's code-server on port 8080
-    "code-server-coal" = mkCodeServerService "coal" 8080;
-
-    # violino's code-server on port 8081
-    "code-server-violino" = mkCodeServerService "violino" 8081;
-  };
+  systemd.services = userServices;
 
   # Ensure code-server package is available system-wide
   environment.systemPackages = [ pkgs.code-server ];
@@ -119,7 +135,7 @@ in
   # ─────────────────────────────────────────────────────────────────────────────
   # code-server binds to 0.0.0.0 (all interfaces) but is NOT exposed publicly:
   #
-  #   1. Firewall trusts only tailscale0 interface (modules/networking/default.nix)
+  #   1. Firewall trusts only tailscale0 interface (nixos/firewall.nix)
   #   2. Tailscale ACLs control who can reach which ports (homelab-iac)
   #   3. No public firewall ports are opened
   #

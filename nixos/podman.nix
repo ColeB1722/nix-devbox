@@ -88,21 +88,30 @@ in
     # ───────────────────────────────────────────────────────────────────────────
     # Rootless containers require subuid/subgid ranges for user namespace mapping.
     # This allows unprivileged users to run containers without root access.
+    #
+    # IMPORTANT: Each user must have a unique, non-overlapping range to prevent
+    # permission conflicts and security issues between users' containers.
+    # Range calculation: base (100000) + (user_index * 65536)
 
-    users.users = lib.genAttrs users.allUserNames (_: {
-      subUidRanges = [
-        {
-          startUid = 100000;
-          count = 65536;
-        }
-      ];
-      subGidRanges = [
-        {
-          startGid = 100000;
-          count = 65536;
-        }
-      ];
-    });
+    users.users = lib.listToAttrs (
+      lib.imap0 (idx: name: {
+        inherit name;
+        value = {
+          subUidRanges = [
+            {
+              startUid = 100000 + (idx * 65536);
+              count = 65536;
+            }
+          ];
+          subGidRanges = [
+            {
+              startGid = 100000 + (idx * 65536);
+              count = 65536;
+            }
+          ];
+        };
+      }) users.allUserNames
+    );
 
     # ───────────────────────────────────────────────────────────────────────────
     # Safety Assertions

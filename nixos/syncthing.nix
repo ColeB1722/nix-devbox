@@ -26,12 +26,14 @@
 
 let
   cfg = config.devbox.syncthing;
-  # Default to first admin user if available
+  # Default to first admin user if available, with safe empty list handling
   defaultUser =
-    if users.adminUserNames == [ ] then
+    if users.adminUserNames != [ ] then
+      builtins.head users.adminUserNames
+    else if users.allUserNames != [ ] then
       builtins.head users.allUserNames
     else
-      builtins.head users.adminUserNames;
+      null; # Will be caught by assertion below
 in
 {
   # ─────────────────────────────────────────────────────────────────────────────
@@ -42,7 +44,7 @@ in
     enable = lib.mkEnableOption "Syncthing file synchronization";
 
     user = lib.mkOption {
-      type = lib.types.str;
+      type = lib.types.nullOr lib.types.str;
       default = defaultUser;
       description = ''
         User account to run Syncthing as.
@@ -125,7 +127,14 @@ in
 
     assertions = [
       {
-        assertion = config.users.users ? ${cfg.user};
+        assertion = cfg.user != null;
+        message = ''
+          No users defined. Syncthing requires at least one user.
+          Define users in lib/users.nix or set devbox.syncthing.user explicitly.
+        '';
+      }
+      {
+        assertion = cfg.user != null -> config.users.users ? ${cfg.user};
         message = ''
           Syncthing user '${cfg.user}' does not exist.
           The user must be defined in your users configuration.

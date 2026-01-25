@@ -106,11 +106,14 @@ in
   programs._1password.enable = true;
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Home Manager Configuration
+  # Home Manager Integration
   # ─────────────────────────────────────────────────────────────────────────────
-  # Each user gets their own Home Manager configuration.
-  # The actual HM config is provided by mkHost.nix or the consumer's flake.nix,
-  # but we set up the basic integration here.
+  # This module sets up Home Manager integration but does NOT configure per-user
+  # HM settings. Per-user configuration (profiles, git identity, etc.) is handled by:
+  #   - lib/mkHost.nix (for consumers using the helper functions)
+  #   - Consumer's flake.nix (for direct configuration)
+  #
+  # This avoids duplicate configuration and potential merge conflicts.
 
   home-manager = {
     useGlobalPkgs = true;
@@ -119,27 +122,7 @@ in
     # Pass users data to Home Manager modules
     extraSpecialArgs = { inherit users; };
 
-    # Create a basic Home Manager config for each user
-    # Consumers can override this via their flake.nix or mkHost.nix
-    users = builtins.listToAttrs (
-      map (name: {
-        inherit name;
-        value = _: {
-          # User-specific git configuration from user data
-          programs.git = {
-            userName = users.${name}.gitUser;
-            userEmail = users.${name}.email;
-          };
-
-          # Basic home settings
-          # Note: home.stateVersion is set by profiles (developer.nix, minimal.nix)
-          # to avoid conflicts when consumer flake also imports profiles
-          home = {
-            username = name;
-            homeDirectory = "/home/${name}";
-          };
-        };
-      }) users.allUserNames
-    );
+    # Per-user HM config is set by mkHost.nix or consumer's flake.nix
+    # This module only provides the integration scaffolding
   };
 }

@@ -245,10 +245,9 @@
       # ─────────────────────────────────────────────────────────────────────────
       # Screenshots
       # ─────────────────────────────────────────────────────────────────────────
+      # Note: location is set via activation script below because tilde (~)
+      # doesn't expand when passed through system.defaults
       screencapture = {
-        # Save screenshots to ~/Screenshots
-        location = "~/Screenshots";
-
         # Save screenshots as PNG
         type = "png";
 
@@ -262,8 +261,10 @@
     # ───────────────────────────────────────────────────────────────────────────
 
     activationScripts.postUserActivation.text = ''
-      # Create Screenshots directory if it doesn't exist
-      mkdir -p ~/Screenshots
+      # Create Screenshots directory and set as screenshot location
+      # (Using activation script because ~ doesn't expand in system.defaults)
+      mkdir -p "$HOME/Screenshots"
+      defaults write com.apple.screencapture location -string "$HOME/Screenshots"
 
       # Disable Spotlight indexing for developer directories
       # (run manually if needed: sudo mdutil -i off /path/to/folder)

@@ -290,6 +290,12 @@ in
 
     # Link config file to $HOME/.config/aerospace/aerospace.toml
     system.activationScripts.postUserActivation.text = ''
+      # Guard against unset HOME (defensive - postUserActivation should have it set)
+      if [ -z "$HOME" ] || [ ! -d "$HOME" ]; then
+        echo "Warning: HOME not set or not a directory, skipping Aerospace config"
+        exit 0
+      fi
+
       # Create aerospace config directory
       mkdir -p "$HOME/.config/aerospace"
 

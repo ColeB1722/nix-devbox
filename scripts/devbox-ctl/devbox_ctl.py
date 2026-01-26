@@ -134,7 +134,14 @@ def is_admin(user: str) -> bool:
     """Check if user is in wheel/sudo group."""
     try:
         result = run_command(["groups", user], check=False)
-        groups = result.stdout.strip().split()
+        # Output format varies: "username : group1 group2" or "group1 group2"
+        output = result.stdout.strip()
+        if " : " in output:
+            # Format: "username : group1 group2 group3"
+            groups = output.split(" : ", 1)[1].split()
+        else:
+            # Format: "group1 group2 group3"
+            groups = output.split()
         return "wheel" in groups or "sudo" in groups
     except Exception:
         return False

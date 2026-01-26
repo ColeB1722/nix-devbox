@@ -64,6 +64,7 @@ let
       local timestamp="$1"
       local now
       local then
+      local diff
 
       now=$(date +%s)
       # Handle ISO 8601 format
@@ -74,7 +75,14 @@ let
         return
       fi
 
-      echo $(( (now - then) / 86400 ))
+      # Handle clock skew - if timestamp is in the future, treat as just active
+      diff=$(( now - then ))
+      if [[ "$diff" -lt 0 ]]; then
+        echo "0"
+        return
+      fi
+
+      echo $(( diff / 86400 ))
     }
 
     # Process containers for each user
@@ -152,8 +160,11 @@ let
             fi
 
             # Remove from Tailscale (best effort)
-            # Note: Ephemeral keys should auto-remove, but we try anyway
-            ${pkgs.tailscale}/bin/tailscale logout --hostname="$name" 2>/dev/null || true
+            # Note: Ephemeral auth keys auto-remove the device when disconnected,
+            # so explicit logout is not needed. The tailscale logout command does
+            # not support --hostname flag. If manual removal is needed, use the
+            # Tailscale admin API instead.
+            log_info "Container '$name' used ephemeral key - Tailscale device will auto-remove"
 
             # Update registry - remove container
             local tmp_file

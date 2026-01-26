@@ -97,7 +97,8 @@ rec {
   # ─────────────────────────────────────────────────────────────────────────────
 
   # Validate memory string format (e.g., "4G", "512M", "2G")
-  isValidMemoryString = mem: builtins.isString mem && builtins.match "^[0-9]+[MG]$" mem != null;
+  # Requires at least 1 (rejects "0G", "0M")
+  isValidMemoryString = mem: builtins.isString mem && builtins.match "^[1-9][0-9]*[MG]$" mem != null;
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Configuration Validators

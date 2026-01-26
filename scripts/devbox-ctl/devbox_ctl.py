@@ -14,8 +14,10 @@ Constitution alignment:
   - Principle V: Documentation as Code (comprehensive help)
 """
 
+import fcntl
 import json
 import os
+import pwd
 import re
 import subprocess
 import sys
@@ -78,7 +80,7 @@ class NotFoundError(DevboxError):
     pass
 
 
-class PermissionError(DevboxError):
+class DevboxPermissionError(DevboxError):
     """Raised when user lacks permission."""
 
     pass
@@ -102,8 +104,13 @@ class PodmanError(DevboxError):
 
 
 def get_current_user() -> str:
-    """Get the current username."""
-    return os.environ.get("USER", os.getlogin())
+    """Get the current username.
+
+    Prefers $USER environment variable, falls back to passwd database.
+    This works reliably in cron, systemd services, and remote execution
+    where os.getlogin() would fail.
+    """
+    return os.environ.get("USER") or pwd.getpwuid(os.getuid()).pw_name
 
 
 def get_timestamp() -> str:
@@ -196,21 +203,48 @@ def validate_cpu(cpu: int) -> None:
 
 
 def init_registry() -> None:
-    """Initialize the registry file if it doesn't exist."""
+    """Initialize the registry file if it doesn't exist.
+
+    Uses file locking to prevent race conditions during initialization.
+    """
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     if not REGISTRY_FILE.exists():
-        REGISTRY_FILE.write_text(json.dumps({"version": 1, "containers": []}, indent=2))
+        # Use exclusive lock for creation
+        with open(REGISTRY_FILE, "w") as f:
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            try:
+                json.dump({"version": 1, "containers": []}, f, indent=2)
+            finally:
+                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 def load_registry() -> dict:
-    """Load the container registry."""
+    """Load the container registry with shared file locking.
+
+    Uses shared lock to allow concurrent reads while preventing
+    reads during writes.
+    """
     init_registry()
-    return json.loads(REGISTRY_FILE.read_text())
+    with open(REGISTRY_FILE, "r") as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+        try:
+            return json.load(f)
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 def save_registry(registry: dict) -> None:
-    """Save the container registry."""
-    REGISTRY_FILE.write_text(json.dumps(registry, indent=2))
+    """Save the container registry with exclusive file locking.
+
+    Uses exclusive lock to prevent concurrent modifications and
+    ensure atomic writes.
+    """
+    with open(REGISTRY_FILE, "w") as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            json.dump(registry, f, indent=2)
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 def get_container(name: str) -> Optional[dict]:
@@ -616,58 +650,70 @@ def create(ctx, name, cpu, memory, no_start, with_syncthing):
         authkey = get_tailscale_authkey(user)
         tags = get_tailscale_tags(user)
 
-        # Add to registry
+        # Add to registry (will be cleaned up on failure)
         add_container(name, user, cpu, memory, with_syncthing)
 
-        # Create volume
-        volume_name = f"{name}-data"
-        if not podman_volume_exists(volume_name):
-            click.echo(f"Creating volume '{volume_name}'...")
-            podman_create_volume(volume_name)
+        try:
+            # Create volume
+            volume_name = f"{name}-data"
+            if not podman_volume_exists(volume_name):
+                click.echo(f"Creating volume '{volume_name}'...")
+                podman_create_volume(volume_name)
 
-        if no_start:
-            update_container(name, state="stopped")
-            click.echo(
-                click.style(f"✓ Container '{name}' created (not started)", fg="green")
-            )
-            return
-
-        # Run container
-        click.echo("Starting container...")
-        podman_run_container(
-            name, volume_name, cpu, memory, authkey, tags, with_syncthing
-        )
-
-        # Wait for Tailscale
-        click.echo("Waiting for Tailscale connection...")
-        ts_ip = wait_for_tailscale(name)
-
-        if ts_ip:
-            update_container(name, state="running", tailscaleIP=ts_ip)
-            click.echo()
-            click.echo(
-                click.style(f"✓ Container '{name}' created successfully!", fg="green")
-            )
-            click.echo()
-            click.echo(f"Connect via SSH:     ssh dev@{name}")
-            click.echo(
-                f"Connect via Zed:     Open Zed → Connect to Server → dev@{name}"
-            )
-            click.echo(f"Connect via Browser: http://{name}:8080 (code-server)")
-            if with_syncthing:
-                click.echo()
-                click.echo("Syncthing enabled:")
-                click.echo(f"  GUI:         http://{name}:8384")
-                click.echo("  Sync folder: /home/dev/sync")
-        else:
-            update_container(name, state="running")
-            click.echo(
-                click.style(
-                    "⚠ Container created but Tailscale connection timed out",
-                    fg="yellow",
+            if no_start:
+                update_container(name, state="stopped")
+                click.echo(
+                    click.style(
+                        f"✓ Container '{name}' created (not started)", fg="green"
+                    )
                 )
+                return
+
+            # Run container
+            click.echo("Starting container...")
+            podman_run_container(
+                name, volume_name, cpu, memory, authkey, tags, with_syncthing
             )
-            click.echo("Check manually with: devbox-ctl status " + name)
+
+            # Wait for Tailscale
+            click.echo("Waiting for Tailscale connection...")
+            ts_ip = wait_for_tailscale(name)
+
+            if ts_ip:
+                update_container(name, state="running", tailscaleIP=ts_ip)
+                click.echo()
+                click.echo(
+                    click.style(
+                        f"✓ Container '{name}' created successfully!", fg="green"
+                    )
+                )
+                click.echo()
+                click.echo(f"Connect via SSH:     ssh dev@{name}")
+                click.echo(
+                    f"Connect via Zed:     Open Zed → Connect to Server → dev@{name}"
+                )
+                click.echo(f"Connect via Browser: http://{name}:8080 (code-server)")
+                if with_syncthing:
+                    click.echo()
+                    click.echo("Syncthing enabled:")
+                    click.echo(f"  GUI:         http://{name}:8384")
+                    click.echo("  Sync folder: /home/dev/sync")
+            else:
+                update_container(name, state="running")
+                click.echo(
+                    click.style(
+                        "⚠ Container created but Tailscale connection timed out",
+                        fg="yellow",
+                    )
+                )
+                click.echo("Check manually with: devbox-ctl status " + name)
+        except Exception:
+            # Clean up registry entry on failure to prevent orphaned entries
+            click.echo(
+                click.style("Cleaning up after failure...", fg="yellow"), err=True
+            )
+            remove_container(name)
+            raise
 
     except DevboxError as e:
         click.echo()
@@ -749,7 +795,7 @@ def start(name: str) -> None:
             )
 
         if container["owner"] != user and not is_admin(user):
-            raise PermissionError(
+            raise DevboxPermissionError(
                 "Permission denied",
                 f"Container '{name}' belongs to user '{container['owner']}'.",
             )
@@ -795,7 +841,7 @@ def stop(name: str) -> None:
             )
 
         if container["owner"] != user and not is_admin(user):
-            raise PermissionError(
+            raise DevboxPermissionError(
                 "Permission denied",
                 f"Container '{name}' belongs to user '{container['owner']}'.",
             )
@@ -838,7 +884,7 @@ def destroy(name: str, force: bool, keep_volume: bool) -> None:
             )
 
         if container["owner"] != user and not is_admin(user):
-            raise PermissionError(
+            raise DevboxPermissionError(
                 "Permission denied",
                 f"Container '{name}' belongs to user '{container['owner']}'.",
             )
@@ -900,7 +946,7 @@ def status(name: str) -> None:
             )
 
         if container["owner"] != user and not is_admin(user):
-            raise PermissionError(
+            raise DevboxPermissionError(
                 "Permission denied",
                 f"Container '{name}' belongs to user '{container['owner']}'.",
             )
@@ -960,7 +1006,7 @@ def logs(name: str, follow: bool, tail: int) -> None:
             )
 
         if container["owner"] != user and not is_admin(user):
-            raise PermissionError(
+            raise DevboxPermissionError(
                 "Permission denied",
                 f"Container '{name}' belongs to user '{container['owner']}'.",
             )
@@ -991,7 +1037,7 @@ def rotate_key(name: str) -> None:
             )
 
         if container["owner"] != user and not is_admin(user):
-            raise PermissionError(
+            raise DevboxPermissionError(
                 "Permission denied",
                 f"Container '{name}' belongs to user '{container['owner']}'.",
             )

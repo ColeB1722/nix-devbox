@@ -83,13 +83,13 @@ Based on plan.md project structure:
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Create base devcontainer image definition with CLI tools in containers/devcontainer/default.nix
-- [ ] T019 [P] [US1] Create Tailscale setup layer for container with userspace networking in containers/devcontainer/tailscale.nix
-- [ ] T020 [P] [US1] Create code-server layer for browser-based IDE in containers/devcontainer/code-server.nix
-- [ ] T021 [P] [US1] Create Zed remote server layer in containers/devcontainer/zed-remote.nix
-- [ ] T022 [US1] Create container entrypoint script with Tailscale init in containers/devcontainer/entrypoint.sh
+- [x] T018 [US1] Create base devcontainer image definition with CLI tools in containers/devcontainer/default.nix
+- [x] T019 [P] [US1] Create Tailscale setup layer for container with userspace networking in containers/devcontainer/default.nix (integrated)
+- [x] T020 [P] [US1] Create code-server layer for browser-based IDE in containers/devcontainer/default.nix (integrated)
+- [x] T021 [P] [US1] Create Zed remote server layer in containers/devcontainer/default.nix (Zed uses SSH, no separate server needed)
+- [x] T022 [US1] Create container entrypoint script with Tailscale init in containers/devcontainer/default.nix (embedded)
 - [x] T023 [US1] Implement devbox-ctl create subcommand with validation, 1Password retrieval, Podman run in scripts/devbox-ctl/devbox_ctl.py
-- [ ] T024 [US1] Add container image build output to flake.nix packages
+- [x] T024 [US1] Add container image build output to flake.nix packages
 
 **Checkpoint**: Developers can create and access dev containers via Tailscale SSH, code-server, and Zed
 

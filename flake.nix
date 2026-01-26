@@ -394,6 +394,35 @@
         containers = import ./lib/containers.nix { inherit (nixpkgs) lib; };
       };
 
+      # ─────────────────────────────────────────────────────────────────────────
+      # Packages (Container Images)
+      # ─────────────────────────────────────────────────────────────────────────
+      # Container images for the dev container orchestrator (Linux only)
+      # Build with: nix build .#packages.x86_64-linux.devcontainer
+
+      packages =
+        let
+          # Container images are Linux-only (OCI containers)
+          linuxSystems = [
+            "x86_64-linux"
+            "aarch64-linux"
+          ];
+        in
+        nixpkgs.lib.genAttrs linuxSystems (
+          system:
+          let
+            pkgs = import nixpkgs {
+              inherit system;
+              config.allowUnfree = true;
+            };
+          in
+          {
+            # Dev container image (OCI format)
+            # Load into Podman with: podman load < result
+            devcontainer = import ./containers/devcontainer { inherit pkgs; };
+          }
+        );
+
       # Pre-commit checks for each supported system
       # Run via `nix flake check` for sandboxed validation
       checks = forEachSystem (system: {

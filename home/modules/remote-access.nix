@@ -36,11 +36,20 @@
   # code-server Configuration
   # ─────────────────────────────────────────────────────────────────────────
   # Configuration file for code-server settings
-  # Authentication is handled by Tailscale, so we disable built-in auth
+  #
+  # SECURITY NOTE: This config binds to 127.0.0.1 (localhost only) by default.
+  # In containerized environments with Tailscale, the container entrypoint
+  # overrides this to bind to 0.0.0.0 when Tailscale is connected.
+  # This ensures code-server is never exposed without Tailscale protection.
+  #
+  # If you need to expose code-server without Tailscale, set a password:
+  #   auth: password
+  #   password: <your-secure-password>
+  # Or use environment variable: PASSWORD=<your-password>
   xdg.configFile."code-server/config.yaml".text = ''
-    # code-server configuration for dev containers
-    # Authentication handled by Tailscale identity - no password needed
-    bind-addr: 0.0.0.0:8080
+    # code-server configuration
+    # Binds to localhost only - container entrypoint may override for Tailscale
+    bind-addr: 127.0.0.1:8080
     auth: none
     cert: false
 

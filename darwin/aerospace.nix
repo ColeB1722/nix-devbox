@@ -148,7 +148,8 @@ let
     alt-shift-q = 'close'
 
     # Enter join mode (for joining windows into splits)
-    alt-j = 'mode join'
+    # Using alt-shift-i to avoid conflict with alt-j (focus down)
+    alt-shift-i = 'mode join'
 
     # ─────────────────────────────────────────────────────────────────────────────
     # Mode: Resize

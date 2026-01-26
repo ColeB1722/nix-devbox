@@ -181,15 +181,6 @@ let
             # Tailscale admin API instead.
             log_info "Container '$name' used ephemeral key - Tailscale device will auto-remove"
 
-            # Update registry - remove container
-            local tmp_file
-            tmp_file=$(mktemp)
-            ${pkgs.jq}/bin/jq --arg name "$name" \
-              '.containers |= map(select(.name != $name))' \
-              "$registry" > "$tmp_file"
-            mv "$tmp_file" "$registry"
-            chown "$user:$user" "$registry"
-
             log_info "Container '$name' destroyed and removed from registry"
           else
             log_error "Failed to destroy container '$name'"

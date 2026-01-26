@@ -245,9 +245,17 @@ let
     set clipboard=unnamedplus
   '';
 
-  # code-server configuration
-  codeServerConfig = pkgs.writeText "code-server-config.yaml" ''
+  # code-server configuration (default - will be overridden at runtime if Tailscale unavailable)
+  # When Tailscale is connected, we bind to 0.0.0.0 (Tailscale handles auth)
+  # When Tailscale fails, we bind to 127.0.0.1 for security
+  codeServerConfigTailscale = pkgs.writeText "code-server-config-tailscale.yaml" ''
     bind-addr: 0.0.0.0:8080
+    auth: none
+    cert: false
+  '';
+
+  codeServerConfigLocal = pkgs.writeText "code-server-config-local.yaml" ''
+    bind-addr: 127.0.0.1:8080
     auth: none
     cert: false
   '';
@@ -275,8 +283,13 @@ let
     # Container name (passed via environment)
     CONTAINER_NAME="''${CONTAINER_NAME:-devcontainer}"
 
-    # Tailscale auth key (passed via environment, must be set)
-    TS_AUTHKEY="''${TS_AUTHKEY:-}"
+    # Tailscale auth key (read from secret file for security, not env var)
+    TS_AUTHKEY_FILE="''${TS_AUTHKEY_FILE:-/run/secrets/ts_authkey}"
+    if [[ -f "$TS_AUTHKEY_FILE" ]]; then
+      TS_AUTHKEY=$(cat "$TS_AUTHKEY_FILE")
+    else
+      TS_AUTHKEY=""
+    fi
 
     # Tailscale tags (passed via environment)
     TS_TAGS="''${TS_TAGS:-tag:devcontainer}"
@@ -303,8 +316,10 @@ let
     # ─────────────────────────────────────────────────────────────────────────
 
     if [[ -z "$TS_AUTHKEY" ]]; then
-      echo "[entrypoint] WARNING: No Tailscale auth key provided"
-      echo "[entrypoint] Container will not be accessible via Tailscale"
+      echo "[entrypoint] WARNING: No Tailscale auth key found" >&2
+      echo "[entrypoint] Expected auth key at: $TS_AUTHKEY_FILE" >&2
+      echo "[entrypoint] Container will not be accessible via Tailscale" >&2
+      TAILSCALE_CONNECTED=false
     else
       echo "[entrypoint] Starting Tailscale daemon (userspace networking)..."
 
@@ -324,32 +339,44 @@ let
 
       # Authenticate and connect
       echo "[entrypoint] Connecting to Tailscale as $CONTAINER_NAME..."
-      tailscale --socket=/var/run/tailscale/tailscaled.sock up \
+      if tailscale --socket=/var/run/tailscale/tailscaled.sock up \
         --authkey="$TS_AUTHKEY" \
         --hostname="$CONTAINER_NAME" \
         --advertise-tags="$TS_TAGS" \
         --ssh \
         --accept-routes=false \
-        --accept-dns=false
-
-      echo "[entrypoint] Tailscale connected"
-      tailscale --socket=/var/run/tailscale/tailscaled.sock status
+        --accept-dns=false; then
+        echo "[entrypoint] Tailscale connected"
+        tailscale --socket=/var/run/tailscale/tailscaled.sock status
+        TAILSCALE_CONNECTED=true
+      else
+        echo "[entrypoint] ERROR: Tailscale authentication failed" >&2
+        echo "[entrypoint] Check that TS_AUTHKEY is valid and not expired" >&2
+        echo "[entrypoint] Container will only be accessible via direct port exposure" >&2
+        TAILSCALE_CONNECTED=false
+      fi
     fi
 
     # ─────────────────────────────────────────────────────────────────────────
     # code-server Setup
     # ─────────────────────────────────────────────────────────────────────────
 
-    echo "[entrypoint] Starting code-server on port 8080..."
-
     # Create code-server directories
     mkdir -p /home/dev/.config/code-server
     mkdir -p /home/dev/.local/share/code-server
 
-    # Copy config if not exists
-    if [[ ! -f /home/dev/.config/code-server/config.yaml ]]; then
-      cp /etc/code-server/config.yaml /home/dev/.config/code-server/config.yaml
+    # Select config based on Tailscale status
+    # If Tailscale connected: bind to 0.0.0.0 (Tailscale ACLs handle auth)
+    # If Tailscale failed: bind to 127.0.0.1 for security (local access only)
+    if [[ "''${TAILSCALE_CONNECTED:-false}" == "true" ]]; then
+      echo "[entrypoint] Starting code-server on 0.0.0.0:8080 (Tailscale provides auth)..."
+      cp /etc/code-server/config-tailscale.yaml /home/dev/.config/code-server/config.yaml
+    else
+      echo "[entrypoint] WARNING: Starting code-server on 127.0.0.1:8080 (Tailscale unavailable)" >&2
+      echo "[entrypoint] code-server only accessible from within container" >&2
+      cp /etc/code-server/config-local.yaml /home/dev/.config/code-server/config.yaml
     fi
+    chown dev:dev /home/dev/.config/code-server/config.yaml
 
     # Start code-server as dev user
     su -s /bin/bash dev -c "code-server --config /home/dev/.config/code-server/config.yaml /home/dev" &
@@ -515,9 +542,10 @@ pkgs.dockerTools.buildLayeredImage {
     mkdir -p home/dev/.config/nvim
     cp ${nvimConfig} home/dev/.config/nvim/init.vim
 
-    # code-server configuration
+    # code-server configuration (two variants based on Tailscale status)
     mkdir -p etc/code-server
-    cp ${codeServerConfig} etc/code-server/config.yaml
+    cp ${codeServerConfigTailscale} etc/code-server/config-tailscale.yaml
+    cp ${codeServerConfigLocal} etc/code-server/config-local.yaml
 
     # Set ownership (will be fixed at runtime)
     # Note: dockerTools doesn't support chown during build

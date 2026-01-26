@@ -180,10 +180,11 @@ def validate_container_name(name: str) -> None:
 
 def validate_memory(memory: str) -> None:
     """Validate memory format (e.g., 4G, 512M)."""
-    if not re.match(r"^\d+[MG]$", memory):
+    # Regex matches Nix schema: ^[1-9][0-9]*[MG]$ (rejects 0M, 0G)
+    if not re.match(r"^[1-9][0-9]*[MG]$", memory):
         raise ValidationError(
             f"Invalid memory format: {memory}",
-            "Memory must be a number followed by M or G.",
+            "Memory must be a positive number followed by M or G (e.g., '4G', '512M').",
             "Example: --memory 4G or --memory 512M",
         )
 
@@ -240,11 +241,15 @@ def save_registry(registry: dict) -> None:
     """Save the container registry with exclusive file locking.
 
     Uses exclusive lock to prevent concurrent modifications and
-    ensure atomic writes.
+    ensure atomic writes. Opens in r+ mode to avoid truncating
+    before the lock is acquired.
     """
-    with open(REGISTRY_FILE, "w") as f:
+    init_registry()  # Ensure file exists
+    with open(REGISTRY_FILE, "r+") as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
+            f.seek(0)
+            f.truncate()
             json.dump(registry, f, indent=2)
         finally:
             fcntl.flock(f.fileno(), fcntl.LOCK_UN)
@@ -554,47 +559,76 @@ def podman_run_container(
     tags: str,
     with_syncthing: bool = False,
 ) -> None:
-    """Run a new container."""
-    cmd = [
-        "podman",
-        "run",
-        "-d",
-        "--name",
-        name,
-        "--hostname",
-        name,
-        # Resource limits
-        "--cpus",
-        str(cpu),
-        "--memory",
-        memory,
-        # Persistent volume
-        "-v",
-        f"{volume}:/home/dev:Z",
-        # Environment variables for container startup
-        "-e",
-        f"TS_AUTHKEY={authkey}",
-        "-e",
-        f"TS_TAGS={tags}",
-        "-e",
-        f"CONTAINER_NAME={name}",
-        "-e",
-        f"SYNCTHING_ENABLED={'true' if with_syncthing else 'false'}",
-        # Capabilities for Tailscale userspace networking
-        "--cap-add=NET_ADMIN",
-        # Restart policy
-        "--restart=unless-stopped",
-        # Container image
-        CONTAINER_IMAGE,
-    ]
+    """Run a new container.
 
+    The Tailscale auth key is passed via a tmpfs-mounted secret file
+    rather than an environment variable to avoid exposure in process
+    lists and container metadata.
+    """
+    import tempfile
+
+    # Create a temporary file for the auth key with restrictive permissions
+    # This file will be bind-mounted into the container and deleted after start
+    secret_dir = DATA_DIR / "secrets"
+    secret_dir.mkdir(parents=True, exist_ok=True)
+
+    secret_file = secret_dir / f"{name}-authkey"
     try:
-        run_command(cmd)
-    except subprocess.CalledProcessError as e:
-        raise PodmanError(
-            f"Failed to create container: {name}",
-            e.stderr or str(e),
-        )
+        # Write auth key to file with restrictive permissions (owner read-only)
+        fd = os.open(secret_file, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(authkey)
+
+        cmd = [
+            "podman",
+            "run",
+            "-d",
+            "--name",
+            name,
+            "--hostname",
+            name,
+            # Resource limits
+            "--cpus",
+            str(cpu),
+            "--memory",
+            memory,
+            # Persistent volume
+            "-v",
+            f"{volume}:/home/dev:Z",
+            # Mount auth key as read-only secret file (not in env vars)
+            "-v",
+            f"{secret_file}:/run/secrets/ts_authkey:ro,Z",
+            # Environment variables for container startup (no sensitive data)
+            "-e",
+            f"TS_AUTHKEY_FILE=/run/secrets/ts_authkey",
+            "-e",
+            f"TS_TAGS={tags}",
+            "-e",
+            f"CONTAINER_NAME={name}",
+            "-e",
+            f"SYNCTHING_ENABLED={'true' if with_syncthing else 'false'}",
+            # Capabilities for Tailscale userspace networking
+            "--cap-add=NET_ADMIN",
+            # Restart policy
+            "--restart=unless-stopped",
+            # Container image
+            CONTAINER_IMAGE,
+        ]
+
+        try:
+            run_command(cmd)
+        except subprocess.CalledProcessError as e:
+            raise PodmanError(
+                f"Failed to create container: {name}",
+                e.stderr or str(e),
+            )
+    finally:
+        # Clean up the secret file after container starts
+        # The container has its own copy via the bind mount
+        try:
+            secret_file.unlink()
+        except FileNotFoundError:
+            pass
 
 
 def wait_for_tailscale(name: str, timeout: int = 60) -> Optional[str]:

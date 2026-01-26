@@ -565,8 +565,6 @@ def podman_run_container(
     rather than an environment variable to avoid exposure in process
     lists and container metadata.
     """
-    import tempfile
-
     # Create a temporary file for the auth key with restrictive permissions
     # This file will be bind-mounted into the container and deleted after start
     secret_dir = DATA_DIR / "secrets"
@@ -600,7 +598,7 @@ def podman_run_container(
             f"{secret_file}:/run/secrets/ts_authkey:ro,Z",
             # Environment variables for container startup (no sensitive data)
             "-e",
-            f"TS_AUTHKEY_FILE=/run/secrets/ts_authkey",
+            "TS_AUTHKEY_FILE=/run/secrets/ts_authkey",
             "-e",
             f"TS_TAGS={tags}",
             "-e",

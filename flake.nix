@@ -231,6 +231,8 @@
         profiles = {
           minimal = import ./home/profiles/minimal.nix;
           developer = import ./home/profiles/developer.nix;
+          workstation = import ./home/profiles/workstation.nix;
+          container = import ./home/profiles/container.nix;
         };
       };
 

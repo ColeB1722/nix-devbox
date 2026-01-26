@@ -13,7 +13,7 @@
   python3Packages,
   makeWrapper,
   podman,
-  _1password,
+  _1password-cli,
   tailscale,
   jq,
 }:
@@ -49,7 +49,7 @@ python3Packages.buildPythonApplication rec {
       --prefix PATH : ${
         lib.makeBinPath [
           podman
-          _1password
+          _1password-cli
           tailscale
           jq
         ]

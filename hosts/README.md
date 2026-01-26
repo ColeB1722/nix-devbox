@@ -21,7 +21,7 @@ Both `devbox` (bare-metal) and `devbox-wsl` configurations include the orchestra
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/nix-devbox.git
+git clone https://github.com/colebateman/nix-devbox.git
 cd nix-devbox
 
 # Generate hardware configuration (first time only)
@@ -42,7 +42,7 @@ wsl --set-default NixOS
 ```bash
 # Inside WSL
 cd /mnt/c/Users/YourName/repos
-git clone https://github.com/your-org/nix-devbox.git
+git clone https://github.com/colebateman/nix-devbox.git
 cd nix-devbox
 
 # Deploy (no hardware-configuration.nix needed for WSL)

@@ -157,7 +157,7 @@ rec {
     config:
     lib.assertMsg (config ? defaultMemory -> isValidMemoryString config.defaultMemory)
       "containers.defaultMemory must be a valid memory string like '4G' or '512M' (got: ${
-        config.defaultMemory or "not set"
+        if config ? defaultMemory then toString config.defaultMemory else "not set"
       })";
 
   # Validate idleStopDays field

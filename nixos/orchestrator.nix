@@ -133,7 +133,7 @@ in
       gh # GitHub CLI
 
       # ─── Secrets Management ───
-      _1password # 1Password CLI (op command)
+      _1password-cli # 1Password CLI (op command)
 
       # ─── Utilities ───
       jq # JSON processing

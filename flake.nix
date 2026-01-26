@@ -49,6 +49,13 @@
     # Note: Uses its own nixpkgs to avoid version incompatibility with 24.05
     git-hooks.url = "github:cachix/git-hooks.nix";
 
+    # nix-darwin for macOS system configuration
+    # Enables declarative macOS management alongside NixOS
+    nix-darwin = {
+      url = "github:LnL7/nix-darwin/nix-darwin-25.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # System types for multi-platform support
     systems.url = "github:nix-systems/default";
   };
@@ -176,6 +183,10 @@
         fish = import ./nixos/fish.nix;
         users = import ./nixos/users.nix;
         code-server = import ./nixos/code-server.nix;
+        podman = import ./nixos/podman.nix;
+        hyprland = import ./nixos/hyprland.nix;
+        syncthing = import ./nixos/syncthing.nix;
+        ttyd = import ./nixos/ttyd.nix;
 
         # All NixOS modules combined (most consumers want this)
         default = {
@@ -188,6 +199,23 @@
             ./nixos/fish.nix
             ./nixos/users.nix
             ./nixos/code-server.nix
+          ];
+        };
+      };
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Darwin Module Exports (for macOS consumers)
+      # ─────────────────────────────────────────────────────────────────────────
+      darwinModules = {
+        # Individual darwin modules
+        core = import ./darwin/core.nix;
+        aerospace = import ./darwin/aerospace.nix;
+
+        # All darwin modules combined
+        default = {
+          imports = [
+            ./darwin/core.nix
+            ./darwin/aerospace.nix
           ];
         };
       };
@@ -311,6 +339,51 @@
       };
 
       # ─────────────────────────────────────────────────────────────────────────
+      # Darwin Configurations (for macOS)
+      # ─────────────────────────────────────────────────────────────────────────
+      # Example macOS configuration for CI and testing
+      # Uses example users - consumers provide their own user data
+
+      darwinConfigurations = {
+        # Example macOS workstation configuration
+        # Consumers should create their own with actual user data
+        macbook = inputs.nix-darwin.lib.darwinSystem {
+          system = "aarch64-darwin";
+
+          specialArgs = {
+            inherit inputs;
+            users = exampleUsers;
+          };
+
+          modules = [
+            # Darwin host configuration
+            ./hosts/macbook
+
+            # Home Manager as darwin module
+            home-manager.darwinModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = {
+                  inherit inputs;
+                  users = exampleUsers;
+                };
+                users = builtins.listToAttrs (
+                  map (name: {
+                    inherit name;
+                    value = {
+                      imports = [ ./home/profiles/workstation.nix ];
+                    };
+                  }) exampleUsers.allUserNames
+                );
+              };
+            }
+          ];
+        };
+      };
+
+      # ─────────────────────────────────────────────────────────────────────────
       # Library Exports (for consumers)
       # ─────────────────────────────────────────────────────────────────────────
 
@@ -318,6 +391,7 @@
       lib = {
         schema = import ./lib/schema.nix { inherit (nixpkgs) lib; };
         mkHost = import ./lib/mkHost.nix { inherit (nixpkgs) lib; };
+        containers = import ./lib/containers.nix { inherit (nixpkgs) lib; };
       };
 
       # Pre-commit checks for each supported system

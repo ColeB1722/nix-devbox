@@ -59,6 +59,10 @@
 
     # code-server - Browser-based VS Code
     ../../nixos/code-server.nix
+
+    # Orchestrator - Dev container management (009-devcontainer-orchestrator)
+    ../../nixos/orchestrator.nix
+    ../../nixos/orchestrator-cleanup.nix
   ];
 
   # ─────────────────────────────────────────────────────────────────────────────
@@ -86,6 +90,10 @@
 
     # Hyprland is opt-in and disabled by default (violates headless-first principle)
     hyprland.enable = lib.mkDefault false;
+
+    # Orchestrator for dev container management (enabled by default on bare-metal)
+    orchestrator.enable = lib.mkDefault true;
+    orchestrator.cleanup.enable = lib.mkDefault true;
   };
 
   # Timezone default (consumer can override)

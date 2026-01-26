@@ -1,0 +1,15 @@
+# Statix configuration
+# https://github.com/nerdypepper/statix
+
+# Disable W01 (bool_comparison) lint
+# This lint warns against `x == true` or `x == false` comparisons.
+# However, we intentionally use `x == false` in orchestrator.nix assertions
+# for null-safety: `!null` throws an error, but `null == false` returns false.
+# This allows assertions to fail gracefully when values are unset.
+disabled = ["bool_comparison"]
+
+# Minimum Nix version for compatibility checks
+nix_version = "2.4"
+
+# Directories to ignore during linting
+ignore = [".direnv"]

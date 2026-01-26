@@ -152,12 +152,16 @@ homebrew = {
 ### darwin-rebuild fails with permission error
 
 ```bash
-# Ensure you own the Nix store
-sudo chown -R $(whoami) /nix
-
-# Or run with sudo
+# For multi-user Nix installations (recommended), run with sudo:
 sudo darwin-rebuild switch --flake .#macbook
+
+# For single-user Nix installations only (will break multi-user setups):
+# sudo chown -R $(whoami) /nix
 ```
+
+> **Warning**: Running `sudo chown -R $(whoami) /nix` on a multi-user Nix
+> installation will break permissions for other users. Only use this on
+> single-user installations.
 
 ### Aerospace not starting
 

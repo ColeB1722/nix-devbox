@@ -129,14 +129,17 @@ let
           if sudo -u "$user" ${pkgs.podman}/bin/podman stop "$name" 2>/dev/null; then
             log_info "Container '$name' stopped successfully"
 
-            # Update registry state
-            local tmp_file
-            tmp_file=$(mktemp)
-            ${pkgs.jq}/bin/jq --arg name "$name" \
-              '(.containers[] | select(.name == $name)).state = "stopped"' \
-              "$registry" > "$tmp_file"
-            mv "$tmp_file" "$registry"
-            chown "$user:$user" "$registry"
+            # Update registry state with exclusive file lock to prevent race conditions
+            (
+              ${pkgs.flock}/bin/flock -x 200
+              local tmp_file
+              tmp_file=$(mktemp)
+              ${pkgs.jq}/bin/jq --arg name "$name" \
+                '(.containers[] | select(.name == $name)).state = "stopped"' \
+                "$registry" > "$tmp_file"
+              mv "$tmp_file" "$registry"
+              chown "$user:$user" "$registry"
+            ) 200>"$registry.lock"
           else
             log_error "Failed to stop container '$name'"
           fi
@@ -158,6 +161,18 @@ let
             if sudo -u "$user" ${pkgs.podman}/bin/podman volume rm "$volume_name" 2>/dev/null; then
               log_info "Volume '$volume_name' removed"
             fi
+
+            # Update registry with exclusive file lock to prevent race conditions
+            (
+              ${pkgs.flock}/bin/flock -x 200
+              local tmp_file
+              tmp_file=$(mktemp)
+              ${pkgs.jq}/bin/jq --arg name "$name" \
+                '.containers |= map(select(.name != $name))' \
+                "$registry" > "$tmp_file"
+              mv "$tmp_file" "$registry"
+              chown "$user:$user" "$registry"
+            ) 200>"$registry.lock"
 
             # Remove from Tailscale (best effort)
             # Note: Ephemeral auth keys auto-remove the device when disconnected,

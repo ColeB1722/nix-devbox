@@ -100,6 +100,7 @@
 
     # ─── NVIDIA Configuration (Uncomment if using NVIDIA GPU) ───
     # Note: NVIDIA + Wayland can be problematic. Consider AMD/Intel for best experience.
+    # If uncommenting, add 'config' to the function arguments above: { config, lib, pkgs, ... }
     # nvidia = {
     #   modesetting.enable = true;
     #   powerManagement.enable = true;

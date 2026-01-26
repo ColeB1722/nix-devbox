@@ -13,7 +13,7 @@
 #   - Principle II: Headless-First Design (remote access tools for headless containers)
 #   - Principle IV: Modular and Reusable (separate module for remote-only components)
 
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 
 {
   home.packages = with pkgs; [
@@ -123,7 +123,8 @@
   # Shell Integration
   # ─────────────────────────────────────────────────────────────────────────
   # Add convenient aliases for remote access tools
-  programs.fish.shellAliases = lib.mkIf (builtins.hasAttr "fish" pkgs) {
+  # Fish aliases - the programs.fish module handles whether these are applied
+  programs.fish.shellAliases = {
     # Start code-server in background (for manual control)
     cs = "code-server --bind-addr 0.0.0.0:8080";
     # Open current directory in code-server

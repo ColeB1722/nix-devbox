@@ -147,11 +147,8 @@ let
     # Close focused window
     alt-shift-q = 'close'
 
-    # Join with adjacent window (create split)
-    alt-shift-j = ['join-with down', 'mode main']
-    alt-shift-k = ['join-with up', 'mode main']
-    alt-shift-h = ['join-with left', 'mode main']
-    alt-shift-l = ['join-with right', 'mode main']
+    # Enter join mode (for joining windows into splits)
+    alt-j = 'mode join'
 
     # ─────────────────────────────────────────────────────────────────────────────
     # Mode: Resize
@@ -175,6 +172,22 @@ let
     b = 'balance-sizes'
 
     # Exit resize mode
+    enter = 'mode main'
+    esc = 'mode main'
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Mode: Join
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Join windows into splits - enter with Alt+J
+
+    [mode.join.binding]
+    # Join with adjacent window using H/J/K/L
+    h = ['join-with left', 'mode main']
+    j = ['join-with down', 'mode main']
+    k = ['join-with up', 'mode main']
+    l = ['join-with right', 'mode main']
+
+    # Exit join mode
     enter = 'mode main'
     esc = 'mode main'
 

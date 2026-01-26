@@ -205,17 +205,20 @@ def validate_cpu(cpu: int) -> None:
 def init_registry() -> None:
     """Initialize the registry file if it doesn't exist.
 
-    Uses file locking to prevent race conditions during initialization.
+    Uses atomic file creation (O_CREAT | O_EXCL) to prevent TOCTOU race conditions.
     """
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if not REGISTRY_FILE.exists():
-        # Use exclusive lock for creation
-        with open(REGISTRY_FILE, "w") as f:
+    try:
+        # O_CREAT | O_EXCL ensures atomic creation - fails if file exists
+        fd = os.open(REGISTRY_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+        with os.fdopen(fd, "w") as f:
             fcntl.flock(f.fileno(), fcntl.LOCK_EX)
             try:
                 json.dump({"version": 1, "containers": []}, f, indent=2)
             finally:
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+    except FileExistsError:
+        pass  # File already exists, nothing to do
 
 
 def load_registry() -> dict:
@@ -268,43 +271,81 @@ def add_container(
     memory: str,
     with_syncthing: bool = False,
 ) -> None:
-    """Add a container to the registry."""
-    registry = load_registry()
-    timestamp = get_timestamp()
+    """Add a container to the registry.
 
-    registry["containers"].append(
-        {
-            "name": name,
-            "owner": owner,
-            "state": "creating",
-            "createdAt": timestamp,
-            "lastActivityAt": timestamp,
-            "cpuLimit": cpu,
-            "memoryLimit": memory,
-            "volumeName": f"{name}-data",
-            "tailscaleHostname": name,
-            "tailscaleIP": None,
-            "withSyncthing": with_syncthing,
-        }
-    )
-    save_registry(registry)
+    Uses exclusive file locking across the entire read-modify-write cycle
+    to prevent lost-update race conditions.
+    """
+    init_registry()
+    with open(REGISTRY_FILE, "r+") as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            registry = json.load(f)
+            timestamp = get_timestamp()
+
+            registry["containers"].append(
+                {
+                    "name": name,
+                    "owner": owner,
+                    "state": "creating",
+                    "createdAt": timestamp,
+                    "lastActivityAt": timestamp,
+                    "cpuLimit": cpu,
+                    "memoryLimit": memory,
+                    "volumeName": f"{name}-data",
+                    "tailscaleHostname": name,
+                    "tailscaleIP": None,
+                    "withSyncthing": with_syncthing,
+                }
+            )
+            f.seek(0)
+            f.truncate()
+            json.dump(registry, f, indent=2)
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 def update_container(name: str, **updates) -> None:
-    """Update container fields in the registry."""
-    registry = load_registry()
-    for container in registry["containers"]:
-        if container["name"] == name:
-            container.update(updates)
-            break
-    save_registry(registry)
+    """Update container fields in the registry.
+
+    Uses exclusive file locking across the entire read-modify-write cycle
+    to prevent lost-update race conditions.
+    """
+    init_registry()
+    with open(REGISTRY_FILE, "r+") as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            registry = json.load(f)
+            for container in registry["containers"]:
+                if container["name"] == name:
+                    container.update(updates)
+                    break
+            f.seek(0)
+            f.truncate()
+            json.dump(registry, f, indent=2)
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 def remove_container(name: str) -> None:
-    """Remove a container from the registry."""
-    registry = load_registry()
-    registry["containers"] = [c for c in registry["containers"] if c["name"] != name]
-    save_registry(registry)
+    """Remove a container from the registry.
+
+    Uses exclusive file locking across the entire read-modify-write cycle
+    to prevent lost-update race conditions.
+    """
+    init_registry()
+    with open(REGISTRY_FILE, "r+") as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        try:
+            registry = json.load(f)
+            registry["containers"] = [
+                c for c in registry["containers"] if c["name"] != name
+            ]
+            f.seek(0)
+            f.truncate()
+            json.dump(registry, f, indent=2)
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 def count_user_containers(user: str) -> int:

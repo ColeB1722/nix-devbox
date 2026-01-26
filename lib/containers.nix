@@ -50,13 +50,11 @@ rec {
   # Format: op://{vault}/{username}-tailscale-authkey/password
   mkAuthKeyReference = vault: username: "op://${vault}/${mkAuthKeyItemName username}/password";
 
-  # Generate Tailscale tags for a container
+  # Generate Tailscale tags for a container as comma-separated string
   # All containers get tag:devcontainer for common ACL rules
   # Each user's containers also get tag:{username}-container for isolation
-  mkTailscaleTags = username: [
-    "tag:devcontainer"
-    "tag:${username}-container"
-  ];
+  # Returns comma-separated string to match Python implementation (get_tailscale_tags)
+  mkTailscaleTags = username: "tag:devcontainer,tag:${username}-container";
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Container Name Validation
@@ -69,23 +67,30 @@ rec {
     name:
     let
       len = builtins.stringLength name;
-      # Check if string matches pattern: starts with letter, contains only a-z, 0-9, hyphen
-      chars = lib.stringToCharacters name;
-      isAlphaLower = c: (c >= "a" && c <= "z");
-      isDigit = c: (c >= "0" && c <= "9");
-      isHyphen = c: c == "-";
-      isValidChar = c: isAlphaLower c || isDigit c || isHyphen c;
-      startsWithLetter = isAlphaLower (builtins.head chars);
-      endsWithAlphaNum =
-        let
-          last = lib.last chars;
-        in
-        isAlphaLower last || isDigit last;
-      allValidChars = builtins.all isValidChar chars;
-      # No consecutive hyphens
-      noDoubleHyphen = !(lib.hasInfix "--" name);
     in
-    len >= 3 && len <= 63 && startsWithLetter && endsWithAlphaNum && allValidChars && noDoubleHyphen;
+    # Early return for empty or too-short strings to avoid head/last on empty list
+    if len < 3 || len > 63 then
+      false
+    else
+      let
+        # Check if string matches pattern: starts with letter, contains only a-z, 0-9, hyphen
+        chars = lib.stringToCharacters name;
+        isAlphaLower = c: (c >= "a" && c <= "z");
+        isDigit = c: (c >= "0" && c <= "9");
+        isHyphen = c: c == "-";
+        isValidChar = c: isAlphaLower c || isDigit c || isHyphen c;
+        # Safe to call head/last now since we verified len >= 3
+        startsWithLetter = isAlphaLower (builtins.head chars);
+        endsWithAlphaNum =
+          let
+            last = lib.last chars;
+          in
+          isAlphaLower last || isDigit last;
+        allValidChars = builtins.all isValidChar chars;
+        # No consecutive hyphens
+        noDoubleHyphen = !(lib.hasInfix "--" name);
+      in
+      startsWithLetter && endsWithAlphaNum && allValidChars && noDoubleHyphen;
 
   # Validate container name with descriptive error
   validateContainerName =

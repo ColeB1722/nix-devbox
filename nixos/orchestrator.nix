@@ -72,12 +72,17 @@ in
         message = "Orchestrator requires firewall to be enabled (networking.firewall.enable = true)";
       }
       {
-        assertion = !config.services.openssh.settings.PasswordAuthentication;
-        message = "Orchestrator requires SSH password authentication to be disabled";
+        # Explicit `== false` required: `!null` throws an error, but `null == false` returns false
+        assertion = config.services.openssh.settings.PasswordAuthentication == false;
+        message = "Orchestrator requires SSH password authentication to be explicitly disabled";
       }
       {
-        assertion = config.services.openssh.settings.PermitRootLogin == "no";
-        message = "Orchestrator requires SSH root login to be disabled";
+        # Accept both "no" (fully disabled) and "prohibit-password" (key-only, useful for automation)
+        assertion = builtins.elem config.services.openssh.settings.PermitRootLogin [
+          "no"
+          "prohibit-password"
+        ];
+        message = "Orchestrator requires SSH root login to be disabled or set to prohibit-password";
       }
     ];
 

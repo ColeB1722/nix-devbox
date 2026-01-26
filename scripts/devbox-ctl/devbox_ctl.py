@@ -1130,19 +1130,23 @@ def rotate_key(name: str) -> None:
         tags = get_tailscale_tags(user)
 
         # Re-authenticate Tailscale inside the container
-        # Use file-based auth key to avoid exposure in process arguments
+        # Use stdin to pass auth key securely (avoids shell injection risks)
         click.echo("Rotating Tailscale auth key...")
         try:
-            # Write auth key to temp file in container with restrictive permissions
-            run_command(
+            # Write auth key via stdin to avoid shell injection vulnerabilities
+            subprocess.run(
                 [
                     "podman",
                     "exec",
+                    "-i",
                     name,
                     "sh",
                     "-c",
-                    f"printf '%s' '{authkey}' > /tmp/ts_authkey && chmod 600 /tmp/ts_authkey",
+                    "cat > /tmp/ts_authkey && chmod 600 /tmp/ts_authkey",
                 ],
+                input=authkey,
+                text=True,
+                capture_output=True,
                 check=True,
             )
 

@@ -141,14 +141,14 @@
     # Start code-server on localhost (safe default)
     cs = "code-server --bind-addr 127.0.0.1:8080";
     # Start code-server on all interfaces (use only with Tailscale protection)
-    cs-public = "code-server --bind-addr 0.0.0.0:8080";
+    cs-public = "echo '⚠️  Binding to 0.0.0.0 - ensure Tailscale protection is active' && code-server --bind-addr 0.0.0.0:8080";
     # Open current directory in code-server
     code = "code-server";
   };
 
   programs.bash.shellAliases = {
     cs = "code-server --bind-addr 127.0.0.1:8080";
-    cs-public = "code-server --bind-addr 0.0.0.0:8080";
+    cs-public = "echo '⚠️  Binding to 0.0.0.0 - ensure Tailscale protection is active' && code-server --bind-addr 0.0.0.0:8080";
     code = "code-server";
   };
 }

@@ -291,27 +291,26 @@ in
     # Link config file to $HOME/.config/aerospace/aerospace.toml
     system.activationScripts.postUserActivation.text = ''
       # Guard against unset HOME (defensive - postUserActivation should have it set)
-      if [ -z "$HOME" ] || [ ! -d "$HOME" ]; then
+      if [ -n "$HOME" ] && [ -d "$HOME" ]; then
+        # Create aerospace config directory
+        mkdir -p "$HOME/.config/aerospace"
+
+        # Link configuration file
+        ${
+          if cfg.configFile != null then
+            ''
+              ln -sf ${cfg.configFile} "$HOME/.config/aerospace/aerospace.toml"
+            ''
+          else
+            ''
+              ln -sf ${aerospaceConfig} "$HOME/.config/aerospace/aerospace.toml"
+            ''
+        }
+
+        echo "Aerospace configuration installed to $HOME/.config/aerospace/aerospace.toml"
+      else
         echo "Warning: HOME not set or not a directory, skipping Aerospace config"
-        exit 0
       fi
-
-      # Create aerospace config directory
-      mkdir -p "$HOME/.config/aerospace"
-
-      # Link configuration file
-      ${
-        if cfg.configFile != null then
-          ''
-            ln -sf ${cfg.configFile} "$HOME/.config/aerospace/aerospace.toml"
-          ''
-        else
-          ''
-            ln -sf ${aerospaceConfig} "$HOME/.config/aerospace/aerospace.toml"
-          ''
-      }
-
-      echo "Aerospace configuration installed to $HOME/.config/aerospace/aerospace.toml"
     '';
 
     # ─────────────────────────────────────────────────────────────────────────────

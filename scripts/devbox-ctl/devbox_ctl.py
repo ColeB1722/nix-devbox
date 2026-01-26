@@ -210,12 +210,30 @@ def validate_cpu(cpu: int) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def cleanup_stale_secrets() -> None:
+    """Remove any lingering secret files from previous crashes.
+
+    Secret files (auth keys) are normally cleaned up in a finally block,
+    but can persist if the process is killed (SIGKILL, power loss).
+    This provides defense-in-depth by cleaning up on startup.
+    """
+    secret_dir = DATA_DIR / "secrets"
+    if secret_dir.exists():
+        for f in secret_dir.glob("*-authkey"):
+            try:
+                f.unlink()
+            except OSError:
+                pass  # Ignore errors - file may already be gone
+
+
 def init_registry() -> None:
     """Initialize the registry file if it doesn't exist.
 
     Uses atomic file creation (O_CREAT | O_EXCL) to prevent TOCTOU race conditions.
+    Also cleans up any stale secret files from previous crashes.
     """
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    cleanup_stale_secrets()
     try:
         # O_CREAT | O_EXCL ensures atomic creation - fails if file exists
         fd = os.open(REGISTRY_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
@@ -980,26 +998,64 @@ def destroy(name: str, force: bool, keep_volume: bool) -> None:
 
         check_podman()
 
+        # Best-effort Podman cleanup (log warnings but continue to clean registry)
+        podman_cleanup_failed = False
+
         # Stop if running
-        if podman_container_state(name) == "running":
-            click.echo("Stopping container...")
-            podman_stop_container(name)
+        try:
+            if podman_container_state(name) == "running":
+                click.echo("Stopping container...")
+                podman_stop_container(name)
+        except PodmanError as e:
+            click.echo(
+                click.style(
+                    f"Warning: Failed to stop container: {e.message}", fg="yellow"
+                ),
+                err=True,
+            )
+            podman_cleanup_failed = True
 
         # Remove container
-        click.echo("Removing container...")
-        if podman_container_exists(name):
-            podman_remove_container(name, force=True)
+        try:
+            if podman_container_exists(name):
+                click.echo("Removing container...")
+                podman_remove_container(name, force=True)
+        except PodmanError as e:
+            click.echo(
+                click.style(
+                    f"Warning: Failed to remove container: {e.message}", fg="yellow"
+                ),
+                err=True,
+            )
+            podman_cleanup_failed = True
 
         # Remove volume (unless --keep-volume)
         volume_name = f"{name}-data"
         if not keep_volume:
-            click.echo("Removing volume...")
-            podman_remove_volume(volume_name)
+            try:
+                click.echo("Removing volume...")
+                podman_remove_volume(volume_name)
+            except PodmanError as e:
+                click.echo(
+                    click.style(
+                        f"Warning: Failed to remove volume: {e.message}", fg="yellow"
+                    ),
+                    err=True,
+                )
+                podman_cleanup_failed = True
 
-        # Remove from registry
+        # Always clean registry to avoid orphaned entries
         remove_container(name)
 
-        click.echo(click.style(f"✓ Container '{name}' destroyed", fg="green"))
+        if podman_cleanup_failed:
+            click.echo(
+                click.style(
+                    f"⚠ Container '{name}' removed from registry (some Podman cleanup failed)",
+                    fg="yellow",
+                )
+            )
+        else:
+            click.echo(click.style(f"✓ Container '{name}' destroyed", fg="green"))
         if keep_volume:
             click.echo(f"  Volume '{volume_name}' preserved")
 

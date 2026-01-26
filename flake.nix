@@ -239,6 +239,8 @@
       hosts = {
         devbox = import ./hosts/devbox;
         devbox-wsl = import ./hosts/devbox-wsl;
+        devbox-desktop = import ./hosts/devbox-desktop;
+        macbook = import ./hosts/macbook;
       };
 
       # ─────────────────────────────────────────────────────────────────────────
@@ -309,6 +311,51 @@
 
             # WSL-specific host configuration
             ./hosts/devbox-wsl
+
+            # Home Manager as NixOS module for atomic system+user updates
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = {
+                  inherit inputs;
+                  users = exampleUsers;
+                };
+                # Import developer profile for all users
+                users = builtins.listToAttrs (
+                  map (name: {
+                    inherit name;
+                    value = {
+                      imports = [ ./home/profiles/developer.nix ];
+                    };
+                  }) exampleUsers.allUserNames
+                );
+              };
+            }
+
+            # Nixpkgs configuration
+            (mkNixpkgsConfig "x86_64-linux")
+          ];
+        };
+
+        # Headful NixOS Desktop (bare metal workstation with Hyprland)
+        # Uses example users and hardware for CI builds
+        devbox-desktop = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+
+          # Pass example users + flake inputs to all modules
+          specialArgs = {
+            inherit inputs;
+            users = exampleUsers;
+          };
+
+          modules = [
+            # Host definition (imports NixOS modules + Hyprland)
+            ./hosts/devbox-desktop
+
+            # Example hardware configuration for CI
+            ./examples/hardware-example.nix
 
             # Home Manager as NixOS module for atomic system+user updates
             home-manager.nixosModules.home-manager

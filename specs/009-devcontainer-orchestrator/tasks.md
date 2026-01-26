@@ -126,7 +126,7 @@ Based on plan.md project structure:
 - [x] T032 [US6] Implement 1Password reference format (op://{vault}/{username}-tailscale-authkey/password) in scripts/devbox-ctl/devbox_ctl.py
 - [x] T033 [US6] Apply user-specific Tailscale tags (tag:devcontainer, tag:{username}-container) in scripts/devbox-ctl/devbox_ctl.py
 - [x] T034 [US6] Validate username in scripts/devbox-ctl/devbox_ctl.py
-- [ ] T035 [P] [US6] Document 1Password Service Account setup in quickstart.md consumer setup section
+- [x] T035 [P] [US6] Document 1Password Service Account setup in quickstart.md consumer setup section
 - [x] T036 [US6] Implement devbox-ctl rotate-key subcommand to update Tailscale auth key without recreating container in scripts/devbox-ctl/devbox_ctl.py
 
 **Checkpoint**: Per-user isolation verified - containers have unique tags, users cannot access each other's containers
@@ -141,12 +141,12 @@ Based on plan.md project structure:
 
 ### Implementation for User Story 4
 
-- [ ] T037 [US4] Create nix-darwin core module with base system configuration in darwin/core.nix
-- [ ] T038 [P] [US4] Create Aerospace tiling window manager module with keybindings in darwin/aerospace.nix
-- [ ] T039 [P] [US4] Create darwin CLI tools module importing home/modules/cli.nix via home-manager in darwin/cli.nix
-- [ ] T040 [P] [US4] Create darwin GUI applications module (placeholder for future Obsidian, etc.) in darwin/apps.nix
-- [ ] T041 [US4] Create darwin host configuration importing core, aerospace, cli, apps in hosts/macbook/default.nix
-- [ ] T042 [US4] Update flake.nix with darwinConfigurations.macbook output
+- [x] T037 [US4] Create nix-darwin core module with base system configuration in darwin/core.nix
+- [x] T038 [P] [US4] Create Aerospace tiling window manager module with keybindings in darwin/aerospace.nix
+- [x] T039 [P] [US4] ~~Create darwin CLI tools module~~ - SKIPPED: CLI tools provided via Home Manager workstation.nix profile
+- [x] T040 [P] [US4] ~~Create darwin GUI applications module~~ - SKIPPED: GUI apps configured inline in hosts/macbook/default.nix homebrew section
+- [x] T041 [US4] Create darwin host configuration importing core, aerospace, cli, apps in hosts/macbook/default.nix
+- [x] T042 [US4] Update flake.nix with darwinConfigurations.macbook output
 
 **Checkpoint**: macOS workstation deployment complete with full CLI tooling and Aerospace tiling
 
@@ -160,10 +160,10 @@ Based on plan.md project structure:
 
 ### Implementation for User Story 5
 
-- [ ] T043 [US5] Create headful NixOS host configuration with Hyprland enabled in hosts/devbox-desktop/default.nix
-- [ ] T044 [P] [US5] Create hardware-configuration.nix.example for headful desktop in hosts/devbox-desktop/hardware-configuration.nix.example
-- [ ] T045 [US5] Update home/users/coal.nix to support headful profile when deployed on desktop
-- [ ] T046 [US5] Document GPU requirements and Hyprland troubleshooting in hosts/README.md
+- [x] T043 [US5] Create headful NixOS host configuration with Hyprland enabled in hosts/devbox-desktop/default.nix
+- [x] T044 [P] [US5] Create hardware-configuration.nix.example for headful desktop in hosts/devbox-desktop/hardware-configuration.nix.example
+- [x] T045 [US5] ~~Update home/users/coal.nix~~ - SKIPPED: Users import developer.nix profile which works for both headless and headful
+- [x] T046 [US5] Document GPU requirements and Hyprland troubleshooting in hosts/README.md (already documented)
 
 **Checkpoint**: Headful NixOS desktop deploys with Hyprland and full CLI tooling
 
@@ -177,11 +177,11 @@ Based on plan.md project structure:
 
 ### Implementation for User Story 7
 
-- [ ] T047 [US7] Create Syncthing layer for dev containers with ports bound to Tailscale interface only in containers/devcontainer/syncthing.nix
-- [ ] T048 [US7] Update containers/devcontainer/default.nix to optionally include Syncthing layer
-- [ ] T049 [US7] Update entrypoint.sh to start Syncthing daemon when --with-syncthing flag used in containers/devcontainer/entrypoint.sh
-- [ ] T050 [US7] Update create.sh to support --with-syncthing flag and display Syncthing URLs in scripts/devbox-ctl/create.sh
-- [ ] T051 [US7] Document Syncthing pairing workflow in quickstart.md
+- [x] T047 [US7] ~~Create Syncthing layer~~ - Integrated directly in containers/devcontainer/default.nix (syncthingPackages + entrypoint logic)
+- [x] T048 [US7] Update containers/devcontainer/default.nix to optionally include Syncthing layer (integrated)
+- [x] T049 [US7] Update entrypoint.sh to start Syncthing daemon when --with-syncthing flag used (embedded in default.nix)
+- [x] T050 [US7] Update devbox-ctl to support --with-syncthing flag and display Syncthing URLs in scripts/devbox-ctl/devbox_ctl.py
+- [x] T051 [US7] Document Syncthing pairing workflow in quickstart.md
 
 **Checkpoint**: Optional Syncthing file sync works between container and local workstation
 
@@ -191,12 +191,12 @@ Based on plan.md project structure:
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T052 [P] Add NixOS assertions for orchestrator security (firewall enabled, SSH hardened) in nixos/orchestrator.nix
-- [ ] T053 [P] Add error handling and user-friendly messages to all devbox-ctl subcommands
-- [ ] T054 [P] Create man page or --help documentation for devbox-ctl in scripts/devbox-ctl/devbox-ctl
-- [ ] T055 Run quickstart.md validation end-to-end for all 4 host configurations
-- [ ] T056 [P] Update AGENTS.md with new module references and service access table
-- [ ] T057 Code cleanup: ensure consistent Nix style, comments on non-obvious decisions
+- [x] T052 [P] Add NixOS assertions for orchestrator security (firewall enabled, SSH hardened) in nixos/orchestrator.nix
+- [x] T053 [P] Add error handling and user-friendly messages to all devbox-ctl subcommands (DevboxError hierarchy)
+- [x] T054 [P] Create man page or --help documentation for devbox-ctl (click provides auto-generated --help)
+- [ ] T055 Run quickstart.md validation end-to-end for all 4 host configurations (manual testing)
+- [x] T056 [P] Update AGENTS.md with new module references and service access table
+- [x] T057 Code cleanup: ensure consistent Nix style, comments on non-obvious decisions (linters pass)
 
 ---
 

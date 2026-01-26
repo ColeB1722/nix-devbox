@@ -538,7 +538,7 @@ def podman_run_container(
         "-e",
         f"CONTAINER_NAME={name}",
         "-e",
-        f"WITH_SYNCTHING={'true' if with_syncthing else 'false'}",
+        f"SYNCTHING_ENABLED={'true' if with_syncthing else 'false'}",
         # Capabilities for Tailscale userspace networking
         "--cap-add=NET_ADMIN",
         # Restart policy

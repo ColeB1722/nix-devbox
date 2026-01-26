@@ -1154,15 +1154,24 @@ def rotate_key(name: str) -> None:
             run_command(["podman", "exec", name, "tailscale", "logout"], check=False)
 
             # Re-authenticate with new key from file
-            run_command(
+            # Pass hostname and tags via environment variables to avoid shell injection
+            subprocess.run(
                 [
                     "podman",
                     "exec",
+                    "-i",
+                    "-e",
+                    f"TS_HOSTNAME={name}",
+                    "-e",
+                    f"TS_TAGS={tags}",
                     name,
                     "sh",
                     "-c",
-                    f"tailscale up --authkey=$(cat /tmp/ts_authkey) --ssh --hostname={name} --advertise-tags={tags}",
-                ]
+                    'tailscale up --authkey=$(cat /tmp/ts_authkey) --ssh --hostname="$TS_HOSTNAME" --advertise-tags="$TS_TAGS"',
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
             )
 
             # Clean up auth key file

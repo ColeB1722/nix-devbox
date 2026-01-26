@@ -277,7 +277,8 @@ in
     # We use homebrew integration since it's not in nixpkgs
     homebrew = {
       enable = true;
-      casks = [ "nikitabobko/tap/aerospace" ];
+      taps = [ "nikitabobko/tap" ];
+      casks = [ "aerospace" ];
 
       # Don't remove other casks, only manage aerospace
       onActivation.cleanup = lib.mkDefault "none";

@@ -132,16 +132,23 @@
   # Shell Integration
   # ─────────────────────────────────────────────────────────────────────────
   # Add convenient aliases for remote access tools
+  #
+  # SECURITY: 'cs' binds to localhost only by default.
+  # Use 'cs-public' to bind to 0.0.0.0 (only in Tailscale-protected containers).
+  #
   # Fish aliases - the programs.fish module handles whether these are applied
   programs.fish.shellAliases = {
-    # Start code-server in background (for manual control)
-    cs = "code-server --bind-addr 0.0.0.0:8080";
+    # Start code-server on localhost (safe default)
+    cs = "code-server --bind-addr 127.0.0.1:8080";
+    # Start code-server on all interfaces (use only with Tailscale protection)
+    cs-public = "code-server --bind-addr 0.0.0.0:8080";
     # Open current directory in code-server
     code = "code-server";
   };
 
   programs.bash.shellAliases = {
-    cs = "code-server --bind-addr 0.0.0.0:8080";
+    cs = "code-server --bind-addr 127.0.0.1:8080";
+    cs-public = "code-server --bind-addr 0.0.0.0:8080";
     code = "code-server";
   };
 }

@@ -287,24 +287,24 @@ in
     # Configuration File
     # ─────────────────────────────────────────────────────────────────────────────
 
-    # Link config file to ~/.config/aerospace/aerospace.toml
+    # Link config file to $HOME/.config/aerospace/aerospace.toml
     system.activationScripts.postUserActivation.text = ''
       # Create aerospace config directory
-      mkdir -p ~/.config/aerospace
+      mkdir -p "$HOME/.config/aerospace"
 
       # Link configuration file
       ${
         if cfg.configFile != null then
           ''
-            ln -sf ${cfg.configFile} ~/.config/aerospace/aerospace.toml
+            ln -sf ${cfg.configFile} "$HOME/.config/aerospace/aerospace.toml"
           ''
         else
           ''
-            ln -sf ${aerospaceConfig} ~/.config/aerospace/aerospace.toml
+            ln -sf ${aerospaceConfig} "$HOME/.config/aerospace/aerospace.toml"
           ''
       }
 
-      echo "Aerospace configuration installed to ~/.config/aerospace/aerospace.toml"
+      echo "Aerospace configuration installed to $HOME/.config/aerospace/aerospace.toml"
     '';
 
     # ─────────────────────────────────────────────────────────────────────────────

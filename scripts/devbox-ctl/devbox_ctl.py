@@ -1130,23 +1130,40 @@ def rotate_key(name: str) -> None:
         tags = get_tailscale_tags(user)
 
         # Re-authenticate Tailscale inside the container
+        # Use file-based auth key to avoid exposure in process arguments
         click.echo("Rotating Tailscale auth key...")
         try:
-            # Logout current session
-            run_command(["podman", "exec", name, "tailscale", "logout"], check=False)
-            # Re-authenticate with new key
+            # Write auth key to temp file in container with restrictive permissions
             run_command(
                 [
                     "podman",
                     "exec",
                     name,
-                    "tailscale",
-                    "up",
-                    f"--authkey={authkey}",
-                    "--ssh",
-                    f"--hostname={name}",
-                    f"--advertise-tags={tags}",
+                    "sh",
+                    "-c",
+                    f"printf '%s' '{authkey}' > /tmp/ts_authkey && chmod 600 /tmp/ts_authkey",
+                ],
+                check=True,
+            )
+
+            # Logout current session
+            run_command(["podman", "exec", name, "tailscale", "logout"], check=False)
+
+            # Re-authenticate with new key from file
+            run_command(
+                [
+                    "podman",
+                    "exec",
+                    name,
+                    "sh",
+                    "-c",
+                    f"tailscale up --authkey=$(cat /tmp/ts_authkey) --ssh --hostname={name} --advertise-tags={tags}",
                 ]
+            )
+
+            # Clean up auth key file
+            run_command(
+                ["podman", "exec", name, "rm", "-f", "/tmp/ts_authkey"], check=False
             )
         except subprocess.CalledProcessError as e:
             raise PodmanError(

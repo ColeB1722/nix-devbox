@@ -18,15 +18,15 @@ Each container includes:
 
 ```
 containers/
-├── README.md                    # This file
+├── README.md            # This file
 └── devcontainer/
-    ├── default.nix              # Main container image definition
-    ├── tailscale.nix            # Tailscale userspace networking layer
-    ├── code-server.nix          # Browser-based IDE layer
-    ├── zed-remote.nix           # Zed editor remote server layer
-    ├── syncthing.nix            # Optional file sync layer
-    └── entrypoint.sh            # Container startup script
+    └── default.nix      # Layered container image with all services
 ```
+
+All services (Tailscale, code-server, Zed remote, Syncthing) and the entrypoint
+script are defined within the monolithic `default.nix` file for simplicity.
+The image uses `dockerTools.buildLayeredImage` with separate package layers
+for caching efficiency.
 
 ## How It Works
 

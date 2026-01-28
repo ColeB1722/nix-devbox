@@ -4,7 +4,6 @@
 **Created**: 2026-01-25  
 **Status**: Draft  
 **Input**: User description: "Add additional development tools: goose, podman, ttyd, cargo, yazi, syncthing, aerospace (nix-darwin), and hyprland (nixos headed)"
-**Enables**: `009-devcontainer-orchestrator` (provides Podman foundation)
 
 ## Current State Analysis
 
@@ -142,7 +141,7 @@ As a NixOS user with a display, I want Hyprland compositor so I can have a moder
 - **FR-004**: System MUST install Podman with rootless configuration
 - **FR-005**: System MUST configure Podman to be Docker CLI-compatible where possible
 - **FR-006**: System MUST NOT conflict with existing Docker installation (WSL uses Docker Desktop)
-- **FR-007**: Podman installation provides foundation for `009-devcontainer-orchestrator`
+- **FR-007**: Podman installation provides rootless container runtime for development use
 
 #### Terminal Sharing
 - **FR-008**: System MUST install ttyd for web-based terminal sharing
@@ -188,6 +187,3 @@ As a NixOS user with a display, I want Hyprland compositor so I can have a moder
 - Headed NixOS installations are a future use case (not current priority)
 - nix-darwin support is planned but not yet implemented (see `darwin/README.md`)
 
-## Relationship to Other Features
-
-- **009-devcontainer-orchestrator**: Depends on this feature for Podman installation. Tailscale SSH with per-user authentication is handled in 009, not here.

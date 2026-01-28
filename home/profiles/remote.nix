@@ -1,10 +1,14 @@
-# Home Manager Container Profile
+# Home Manager Remote Profile
 #
-# Full development toolkit for dev containers running on the orchestrator.
+# Full development toolkit for headless or remote systems.
 # Includes all CLI tools, shell configuration, Git, development tools,
 # and remote access components (code-server, Zed remote).
 #
-# This profile is used exclusively for dev containers.
+# This profile is intended for:
+#   - Headless NixOS servers accessed via SSH
+#   - Remote development machines
+#   - Any system where IDE access is needed via browser or remote protocol
+#
 # For local workstations (macOS, headful NixOS), use workstation.nix instead.
 #
 # Includes:
@@ -13,10 +17,6 @@
 #   - git.nix: Git configuration with lazygit and gh
 #   - dev.nix: Development tools (neovim, zellij, AI tools, languages)
 #   - remote-access.nix: code-server and Zed remote for IDE access
-#
-# Constitution alignment:
-#   - Principle II: Headless-First Design (remote access via SSH/Tailscale)
-#   - Principle IV: Modular and Reusable (composed from individual modules)
 
 { lib, ... }:
 

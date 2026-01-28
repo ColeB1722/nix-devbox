@@ -4,7 +4,6 @@
 **Created**: 2026-01-25
 **Updated**: 2026-01-25
 **Feature**: [spec.md](../spec.md)
-**Enables**: `009-devcontainer-orchestrator`
 
 ## Content Quality
 
@@ -31,13 +30,7 @@
 - [x] Feature meets measurable outcomes defined in Success Criteria
 - [x] No implementation details leak into specification
 
-## Scope Separation (008 vs 009)
 
-- [x] Tailscale SSH removed from this spec (moved to 009-devcontainer-orchestrator)
-- [x] Tailscale auth key management removed (moved to 009)
-- [x] 1Password integration for auth keys removed (moved to 009)
-- [x] Podman explicitly noted as foundation for 009
-- [x] Relationship to 009 documented in spec
 
 ## Platform Considerations
 
@@ -50,6 +43,3 @@
 
 - Spec is ready for `/speckit.plan`
 - Simplified scope focuses on tool installation only
-- Orchestration and per-user Tailscale SSH deferred to 009-devcontainer-orchestrator
-- Current user stories: 6 (down from 7)
-- Current functional requirements: 17 (down from 20)

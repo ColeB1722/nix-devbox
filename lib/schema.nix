@@ -10,21 +10,9 @@
 #   in
 #     assert schema.validateUsers users;
 #     { /* module configuration */ }
-#
-# Constitution alignment:
-#   - Principle III: Security by Default (validates uid ranges, SSH keys)
-#   - Principle V: Documentation as Code (clear error messages)
-#
-# Extended for 009-devcontainer-orchestrator:
-#   - Validates containers config block for orchestrator settings
-#   - Integrates with lib/containers.nix for container-specific validation
 
 { lib }:
 
-let
-  # Import container schema for validation
-  containersSchema = import ./containers.nix { inherit lib; };
-in
 rec {
   # ─────────────────────────────────────────────────────────────────────────────
   # Individual Field Validators
@@ -123,7 +111,6 @@ rec {
     "allUserNames"
     "adminUserNames"
     "codeServerPorts"
-    "containers"
   ];
 
   getUserNames =
@@ -181,20 +168,6 @@ rec {
       true;
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Container Orchestrator Configuration Validation (009-devcontainer-orchestrator)
-  # ─────────────────────────────────────────────────────────────────────────────
-
-  # Validate containers config block (optional - only if orchestrator is used)
-  # Delegates detailed validation to lib/containers.nix
-  validateContainersConfig =
-    users:
-    if users ? containers then
-      lib.assertMsg (builtins.isAttrs users.containers) "'containers' must be an attribute set (got: ${builtins.typeOf users.containers})"
-      && containersSchema.validateConfig users.containers
-    else
-      true; # containers block is optional
-
-  # ─────────────────────────────────────────────────────────────────────────────
   # Main Validator
   # ─────────────────────────────────────────────────────────────────────────────
 
@@ -214,7 +187,6 @@ rec {
     validateAllUserNames users
     && validateAdminUserNames users
     && validateCodeServerPorts users
-    && validateContainersConfig users
     &&
       # Validate each user record
       builtins.all (name: validateUser name users.${name}) userNames;
@@ -225,11 +197,10 @@ rec {
   # Increment this when making breaking changes to the schema
   # Consumers can check this to get migration hints
 
-  schemaVersion = "1.0.0";
+  schemaVersion = "1.1.0";
 
   # Migration hints for future schema changes
   migrationHints = {
-    # Example for future use:
-    # "2.0.0" = "Field 'gitUser' renamed to 'githubUsername'. Update your users.nix.";
+    "1.1.0" = "Removed 'containers' config block (orchestrator feature removed).";
   };
 }

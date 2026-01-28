@@ -5,7 +5,7 @@
 
 ## Summary
 
-Install additional development tools across platforms: CLI tools (goose, cargo, yazi) via Home Manager, container runtime (Podman) and services (ttyd, Syncthing) via NixOS modules, with platform-specific desktop tools (Aerospace for macOS, Hyprland for headed NixOS) as opt-in modules. This feature provides the Podman foundation required by `009-devcontainer-orchestrator`.
+Install additional development tools across platforms: CLI tools (goose, cargo, yazi) via Home Manager, container runtime (Podman) and services (ttyd, Syncthing) via NixOS modules, with platform-specific desktop tools (Aerospace for macOS, Hyprland for headed NixOS) as opt-in modules.
 
 ## Technical Context
 

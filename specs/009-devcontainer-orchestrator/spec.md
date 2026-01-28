@@ -1,8 +1,10 @@
 # Feature Specification: Multi-Platform Development Environment
 
+> **⚠️ ARCHIVED**: This feature was implemented and subsequently removed from the codebase to establish a minimal foundation. The spec is preserved for documentation and potential future reimplementation. See `containers/` for the preserved container image definitions.
+
 **Feature Branch**: `009-devcontainer-orchestrator`  
 **Created**: 2025-01-25  
-**Status**: Draft  
+**Status**: Removed (archived for reference)  
 **Input**: Multi-platform development environment with 4 host configurations: headless orchestrator (NixOS), dev containers (dockertools), macOS workstation (nix-darwin), and headful NixOS desktop.
 **Depends On**: `008-extended-devtools` (Podman, CLI tools, Hyprland foundation)
 

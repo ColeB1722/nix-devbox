@@ -16,11 +16,6 @@
 #
 #   # Subsequent updates
 #   darwin-rebuild switch --flake .#macbook
-#
-# Constitution alignment:
-#   - Principle I: Declarative Configuration (entire macOS config in Nix)
-#   - Principle II: Headless-First Design (CLI tools, keyboard-driven)
-#   - Principle IV: Modular and Reusable (composed from darwin modules)
 
 {
   lib,
@@ -61,13 +56,20 @@
   };
 
   # ─────────────────────────────────────────────────────────────────────────────
+  # Primary User (required for user-specific system defaults)
+  # ─────────────────────────────────────────────────────────────────────────────
+  # nix-darwin requires a primary user for settings like dock, NSGlobalDomain, etc.
+  # This should be the main user of the machine.
+
+  system.primaryUser = lib.mkIf (users ? adminUserNames && users.adminUserNames != [ ]) (
+    builtins.head users.adminUserNames
+  );
+
+  # ─────────────────────────────────────────────────────────────────────────────
   # Users
   # ─────────────────────────────────────────────────────────────────────────────
   # On macOS, users are typically created via System Preferences.
   # nix-darwin can manage shell and home directory settings.
-
-  # Note: Consumer configurations should override this with their actual users.
-  # This is a placeholder for the example configuration.
 
   users.users = lib.mkIf (users ? allUserNames) (
     builtins.listToAttrs (

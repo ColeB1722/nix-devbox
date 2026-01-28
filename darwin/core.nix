@@ -8,11 +8,6 @@
 #   - macOS system defaults (Finder, Dock, etc.)
 #   - Security settings
 #   - Keyboard and input settings
-#
-# Constitution alignment:
-#   - Principle I: Declarative Configuration (macOS settings in Nix)
-#   - Principle III: Security by Default (sensible security defaults)
-#   - Principle V: Documentation as Code (inline comments)
 
 {
   pkgs,
@@ -245,8 +240,6 @@
       # ─────────────────────────────────────────────────────────────────────────
       # Screenshots
       # ─────────────────────────────────────────────────────────────────────────
-      # Note: location is set via activation script below because tilde (~)
-      # doesn't expand when passed through system.defaults
       screencapture = {
         # Save screenshots as PNG
         type = "png";
@@ -257,26 +250,19 @@
     };
 
     # ───────────────────────────────────────────────────────────────────────────
-    # Custom Defaults (not covered by nix-darwin options)
+    # Custom Defaults via activation script
     # ───────────────────────────────────────────────────────────────────────────
+    # Note: postUserActivation was removed in recent nix-darwin.
+    # Using postActivation with sudo for user-specific settings.
 
-    activationScripts.postUserActivation.text = ''
-      # Create Screenshots directory and set as screenshot location
-      # (Using activation script because ~ doesn't expand in system.defaults)
-      mkdir -p "$HOME/Screenshots"
-      defaults write com.apple.screencapture location -string "$HOME/Screenshots"
-
-      # Disable Spotlight indexing for developer directories
-      # (run manually if needed: sudo mdutil -i off /path/to/folder)
-
-      # Show battery percentage in menu bar
-      defaults write com.apple.menuextra.battery ShowPercent -string "YES"
-
-      # Enable subpixel font rendering on non-Apple LCDs
-      defaults write NSGlobalDomain AppleFontSmoothing -int 1
+    activationScripts.postActivation.text = ''
+      # These are system-wide settings that don't require user context
 
       # Disable the "Are you sure you want to open this application?" dialog
       defaults write com.apple.LaunchServices LSQuarantine -bool false
+
+      # Enable subpixel font rendering on non-Apple LCDs
+      defaults write NSGlobalDomain AppleFontSmoothing -int 1
     '';
 
     # ───────────────────────────────────────────────────────────────────────────
@@ -292,25 +278,23 @@
   # ─────────────────────────────────────────────────────────────────────────────
 
   security = {
-    # Allow Touch ID for sudo
-    pam.enableSudoTouchIdAuth = true;
+    # Allow Touch ID for sudo (renamed in recent nix-darwin)
+    pam.services.sudo_local.touchIdAuth = true;
   };
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Homebrew (Optional - for GUI apps not in nixpkgs)
+  # Homebrew (managed by nix-darwin)
   # ─────────────────────────────────────────────────────────────────────────────
-  # Uncomment if you need Homebrew for GUI apps
+  # Enable homebrew management - required for primaryUser settings
 
-  # homebrew = {
-  #   enable = true;
-  #   onActivation = {
-  #     autoUpdate = true;
-  #     cleanup = "zap";
-  #   };
-  #   casks = [
-  #     # Add GUI apps here if not available in nixpkgs
-  #     # "obsidian"
-  #     # "discord"
-  #   ];
-  # };
+  homebrew = {
+    enable = true;
+    onActivation = {
+      autoUpdate = false;
+      cleanup = "none";
+    };
+    # Empty by default - consumers can add casks/brews
+    casks = [ ];
+    brews = [ ];
+  };
 }

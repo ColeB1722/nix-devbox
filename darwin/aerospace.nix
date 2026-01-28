@@ -288,41 +288,32 @@ in
     # Configuration File
     # ─────────────────────────────────────────────────────────────────────────────
 
-    # Link config file to $HOME/.config/aerospace/aerospace.toml
-    system.activationScripts.postUserActivation.text = ''
-      # Guard against unset HOME (defensive - postUserActivation should have it set)
-      if [ -n "$HOME" ] && [ -d "$HOME" ]; then
-        # Create aerospace config directory
-        mkdir -p "$HOME/.config/aerospace"
-
-        # Link configuration file
-        ${
-          if cfg.configFile != null then
-            ''
-              ln -sf ${cfg.configFile} "$HOME/.config/aerospace/aerospace.toml"
-            ''
-          else
-            ''
-              ln -sf ${aerospaceConfig} "$HOME/.config/aerospace/aerospace.toml"
-            ''
-        }
-
-        echo "Aerospace configuration installed to $HOME/.config/aerospace/aerospace.toml"
-      else
-        echo "Warning: HOME not set or not a directory, skipping Aerospace config"
-      fi
-    '';
+    # Link config file to user's .config/aerospace/aerospace.toml
+    # Note: postUserActivation was removed in recent nix-darwin.
+    # Using postActivation with sudo to run as the primary user.
+    environment.etc."aerospace/aerospace.toml".source =
+      if cfg.configFile != null then cfg.configFile else aerospaceConfig;
 
     # ─────────────────────────────────────────────────────────────────────────────
-    # Launch Agent (auto-start)
+    # Launch Agent (auto-start) and Config Setup
     # ─────────────────────────────────────────────────────────────────────────────
-    # Aerospace manages its own auto-start via the config, but we can also
-    # ensure it's running after activation
-
-    # Note: The 'start-at-login = true' in aerospace.toml handles auto-start.
-    # This activation script ensures it's running after a darwin-rebuild.
+    # Aerospace manages its own auto-start via the config, but we ensure
+    # config is linked and it's running after activation.
 
     system.activationScripts.postActivation.text = ''
+      # Link aerospace config for the primary user
+      # Config is placed in /etc/aerospace/aerospace.toml by environment.etc
+      PRIMARY_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/ { print $3 }')
+      if [ -n "$PRIMARY_USER" ] && [ "$PRIMARY_USER" != "loginwindow" ]; then
+        USER_HOME=$(dscl . -read /Users/"$PRIMARY_USER" NFSHomeDirectory | awk '{print $2}')
+        if [ -n "$USER_HOME" ] && [ -d "$USER_HOME" ]; then
+          mkdir -p "$USER_HOME/.config/aerospace"
+          ln -sf /etc/aerospace/aerospace.toml "$USER_HOME/.config/aerospace/aerospace.toml"
+          chown -R "$PRIMARY_USER" "$USER_HOME/.config/aerospace"
+          echo "Aerospace configuration linked for $PRIMARY_USER"
+        fi
+      fi
+
       # Start Aerospace if not running (after darwin-rebuild)
       if ! pgrep -x "AeroSpace" > /dev/null; then
         echo "Starting Aerospace..."

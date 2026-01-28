@@ -1,27 +1,25 @@
 # nix-devbox
 
-A minimal, secure, modular Nix configuration for self-hosted development machines. Supports NixOS (bare-metal, WSL, headful desktop), macOS (nix-darwin), and containers (dockertools).
+A minimal, secure, modular Nix configuration for self-hosted development machines. Supports NixOS (bare-metal, WSL, headful desktop) and macOS (nix-darwin).
 
 ## Overview
 
 This repository contains configurations for:
-- **devbox**: Bare-metal/VM development server with container orchestrator (NixOS)
+- **devbox**: Bare-metal/VM development server (NixOS)
 - **devbox-wsl**: Windows Subsystem for Linux variant (NixOS)
 - **devbox-desktop**: Headful workstation with Hyprland compositor (NixOS)
 - **macbook**: macOS workstation with Aerospace tiling WM (nix-darwin)
-- **devcontainer**: OCI container images for dev environments (dockertools)
 
 All configurations share a common CLI toolkit via Home Manager while using platform-specific system modules.
 
 ## Features
 
-- **Multi-user support**: Separate accounts for `coal` (admin) and `violino` (dev user)
-- **Per-user code-server**: Browser-based VS Code on ports 8080/8081
+- **Multi-user support**: Separate accounts with admin/dev roles
+- **Per-user code-server**: Browser-based VS Code on configurable ports
 - **Modern shell**: Fish with fzf, bat, eza, yazi, and smart abbreviations
 - **Development tools**: neovim, lazygit, zellij, direnv, Rust toolchain
 - **AI coding tools**: goose-cli, Claude Code
-- **Container orchestrator**: Podman-based dev containers with `devbox-ctl` CLI
-- **File sync**: Syncthing integration for containers
+- **File sync**: Syncthing integration
 - **Remote access**: ttyd web terminal, code-server, Zed remote
 - **Desktop**: Hyprland compositor (NixOS), Aerospace tiling WM (macOS)
 - **Infrastructure**: Terraform, 1Password CLI, GitHub CLI
@@ -36,7 +34,7 @@ All configurations share a common CLI toolkit via Home Manager while using platf
 git clone https://github.com/colebateman/nix-devbox.git
 cd nix-devbox
 
-# For bare-metal/VM (orchestrator host)
+# For bare-metal/VM
 sudo nixos-rebuild switch --flake .#devbox
 
 # For WSL
@@ -56,33 +54,6 @@ darwin-rebuild switch --flake .#macbook
 
 ```bash
 sudo nixos-rebuild switch --flake 'https://flakehub.com/f/coal-bap/nix-devbox/*#devbox'
-```
-
-## Container Management
-
-The orchestrator hosts (`devbox`, `devbox-wsl`) include the `devbox-ctl` CLI for managing dev containers:
-
-```bash
-# Create a container
-devbox-ctl create my-project
-
-# Create with Syncthing file sync
-devbox-ctl create my-project --with-syncthing
-
-# List containers
-devbox-ctl list
-
-# Container lifecycle
-devbox-ctl start my-project
-devbox-ctl stop my-project
-devbox-ctl destroy my-project
-
-# View status and logs
-devbox-ctl status my-project
-devbox-ctl logs my-project -f
-
-# Rotate Tailscale auth key
-devbox-ctl rotate-key my-project
 ```
 
 ## Development
@@ -121,16 +92,11 @@ nixos/                       # NixOS system modules (flat structure)
 ├── code-server.nix          # Per-user code-server instances
 ├── ttyd.nix                 # Web terminal sharing
 ├── syncthing.nix            # File synchronization
-├── hyprland.nix             # Wayland compositor (desktop)
-├── orchestrator.nix         # Dev container orchestrator
-└── orchestrator-cleanup.nix # Idle container cleanup timer
+└── hyprland.nix             # Wayland compositor (desktop)
 
 darwin/                      # nix-darwin modules (macOS)
 ├── core.nix                 # Nix settings, macOS defaults, security
 └── aerospace.nix            # Aerospace tiling window manager
-
-containers/                  # OCI container images (dockertools)
-└── devcontainer/            # Dev container with CLI, Tailscale, code-server
 
 home/                        # Home Manager configuration (shared across platforms)
 ├── modules/                 # Reusable building blocks
@@ -143,23 +109,16 @@ home/                        # Home Manager configuration (shared across platfor
 │   ├── minimal.nix          # cli + fish + git
 │   ├── developer.nix        # minimal + dev tools
 │   ├── workstation.nix      # developer (for local machines)
-│   └── container.nix        # developer + remote-access (for containers)
+│   └── remote.nix           # developer + remote-access (for headless systems)
 └── users/                   # Per-user configs
-    ├── coal.nix             # Admin user
-    └── violino.nix          # Dev user
 
 lib/                         # Shared libraries
-├── users.nix                # User metadata (SSH keys, UIDs, etc.)
-├── containers.nix           # Container config schema
 ├── schema.nix               # Configuration validation
 └── mkHost.nix               # Host configuration helper
 
-scripts/                     # CLI tools
-└── devbox-ctl/              # Container management CLI
-
 hosts/                       # Machine-specific configurations
-├── devbox/                  # Bare-metal/VM (orchestrator)
-├── devbox-wsl/              # WSL2 (orchestrator)
+├── devbox/                  # Bare-metal/VM
+├── devbox-wsl/              # WSL2
 ├── devbox-desktop/          # Headful desktop (Hyprland)
 └── macbook/                 # macOS workstation
 ```
@@ -172,15 +131,15 @@ The configuration is organized around three key principles:
 
 2. **Home Manager as shared layer**: User-level config in `home/` works across all platforms. This is where the common CLI toolkit lives.
 
-3. **Centralized user data**: SSH keys, UIDs, and metadata live in `lib/users.nix` and are consumed by platform-specific modules.
+3. **Centralized user data**: SSH keys, UIDs, and metadata are provided by consumers and validated by `lib/schema.nix`.
 
 ## Adding/Updating SSH Keys
 
-SSH public keys are stored in `lib/users.nix`. To update:
+SSH public keys are defined in your user data. To update:
 
 ```nix
-# lib/users.nix
-coal = {
+# your-users.nix
+exampleuser = {
   # ...
   sshKeys = [
     "ssh-ed25519 AAAA... your-key-comment"
@@ -194,18 +153,11 @@ Public keys are safe to commit—only private keys must be kept secret.
 
 ### code-server (Browser-based VS Code)
 
+Access is controlled by Tailscale ACLs. Port assignments are defined in user data under `codeServerPorts`.
+
 | User | Port | Access URL |
 |------|------|------------|
-| coal (admin) | 8080 | `http://devbox:8080` |
-| violino (dev) | 8081 | `http://devbox:8081` |
-
-### Dev Containers
-
-| Service | Port | Access |
-|---------|------|--------|
-| SSH | Tailscale | `ssh dev@container-name` |
-| code-server | 8080 | `http://container-name:8080` |
-| Syncthing GUI | 8384 | `http://container-name:8384` |
+| exampleuser | 8080 | `http://hostname:8080` |
 
 ## Platform Support
 
@@ -215,7 +167,6 @@ Public keys are safe to commit—only private keys must be kept secret.
 | NixOS (WSL) | ✅ Implemented | `nixos/` | `hosts/devbox-wsl/` |
 | NixOS (desktop) | ✅ Implemented | `nixos/` | `hosts/devbox-desktop/` |
 | macOS (nix-darwin) | ✅ Implemented | `darwin/` | `hosts/macbook/` |
-| Containers | ✅ Implemented | `containers/` | N/A |
 
 ## Resources
 

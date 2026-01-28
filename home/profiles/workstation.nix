@@ -8,7 +8,7 @@
 #   - macOS workstations (nix-darwin)
 #   - Headful NixOS desktops
 #
-# For dev containers running on the orchestrator, use container.nix instead.
+# For headless/remote systems, use remote.nix instead.
 #
 # Includes:
 #   - cli.nix: Core CLI tools (ripgrep, fd, bat, eza, fzf, etc.)
@@ -18,10 +18,6 @@
 #
 # Does NOT include:
 #   - remote-access.nix: Not needed for local development
-#
-# Constitution alignment:
-#   - Principle IV: Modular and Reusable (composed from individual modules)
-#   - Principle V: Documentation as Code (clear purpose documented)
 
 { lib, ... }:
 

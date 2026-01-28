@@ -1,15 +1,7 @@
 # NixOS Podman Module - Rootless Container Runtime
 #
 # This module provides Podman as a rootless, daemonless container runtime.
-# It serves as a Docker alternative with better security and is the foundation
-# for feature 009-devcontainer-orchestrator.
-#
-# Constitution alignment:
-#   - Principle I: Declarative Configuration (Podman in Nix)
-#   - Principle II: Headless-First Design (CLI container management)
-#   - Principle III: Security by Default (rootless containers)
-#   - Principle IV: Modular and Reusable (accepts user data from consumer)
-#   - Principle V: Documentation as Code (inline comments)
+# It serves as a Docker alternative with better security.
 #
 # Required specialArgs:
 #   users - User data attrset (see lib/schema.nix for schema)

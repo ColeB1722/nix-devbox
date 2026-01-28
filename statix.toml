@@ -3,8 +3,8 @@
 
 # Disable W01 (bool_comparison) lint
 # This lint warns against `x == true` or `x == false` comparisons.
-# However, we intentionally use `x == false` in orchestrator.nix assertions
-# for null-safety: `!null` throws an error, but `null == false` returns false.
+# However, we intentionally use `x == false` in some assertions for
+# null-safety: `!null` throws an error, but `null == false` returns false.
 # This allows assertions to fail gracefully when values are unset.
 disabled = ["bool_comparison"]
 

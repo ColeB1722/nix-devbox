@@ -232,7 +232,7 @@
           minimal = import ./home/profiles/minimal.nix;
           developer = import ./home/profiles/developer.nix;
           workstation = import ./home/profiles/workstation.nix;
-          container = import ./home/profiles/container.nix;
+          remote = import ./home/profiles/remote.nix;
         };
       };
 
@@ -440,14 +440,13 @@
       lib = {
         schema = import ./lib/schema.nix { inherit (nixpkgs) lib; };
         mkHost = import ./lib/mkHost.nix { inherit (nixpkgs) lib; };
-        containers = import ./lib/containers.nix { inherit (nixpkgs) lib; };
       };
 
       # ─────────────────────────────────────────────────────────────────────────
       # Packages (Container Images)
       # ─────────────────────────────────────────────────────────────────────────
-      # Container images for the dev container orchestrator (Linux only)
-      # Build with: nix build .#packages.x86_64-linux.devcontainer
+      # OCI container images (Linux only)
+      # Build with: nix build .#devcontainer
 
       packages =
         let
@@ -467,7 +466,7 @@
           in
           {
             # Dev container image (OCI format)
-            # Load into Podman with: podman load < result
+            # Load with: podman load < result (or docker load < result)
             devcontainer = import ./containers/devcontainer { inherit pkgs; };
           }
         );

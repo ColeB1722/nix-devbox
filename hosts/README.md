@@ -5,17 +5,14 @@ Each host imports the appropriate NixOS/darwin modules and sets machine-specific
 
 ## Available Hosts
 
-| Host | Platform | Purpose | Orchestrator |
-|------|----------|---------|--------------|
-| `devbox` | NixOS (bare-metal/VM) | Primary headless server | ✅ Enabled |
-| `devbox-wsl` | NixOS (WSL2) | Windows development | ✅ Enabled |
-| `devbox-desktop` | NixOS (bare-metal) | Headful Linux workstation | ❌ No |
-| `macbook` | nix-darwin (macOS) | Local macOS workstation | ❌ No |
+| Host | Platform | Purpose |
+|------|----------|---------|
+| `devbox` | NixOS (bare-metal/VM) | Primary headless server |
+| `devbox-wsl` | NixOS (WSL2) | Windows development |
+| `devbox-desktop` | NixOS (bare-metal) | Headful Linux workstation |
+| `macbook` | nix-darwin (macOS) | Local macOS workstation |
 
-## Orchestrator Deployment
-
-The orchestrator hosts dev containers that are accessible via Tailscale SSH.
-Both `devbox` (bare-metal) and `devbox-wsl` configurations include the orchestrator.
+## Deployment
 
 ### Bare-Metal / VM Deployment
 
@@ -51,21 +48,17 @@ sudo nixos-rebuild switch --flake .#devbox-wsl
 
 ### Verify Deployment
 
-After deployment, verify the orchestrator is operational:
+After deployment, verify the system is operational:
 
 ```bash
 # Check SSH access (from another machine on your tailnet)
 ssh user@devbox.tailnet
 
-# Verify Podman is running
+# Verify Tailscale is connected
+tailscale status
+
+# Check Podman (if enabled)
 podman --version
-podman ps
-
-# Check devbox-ctl is available
-devbox-ctl --help
-
-# Verify 1Password CLI (if configured)
-op --version
 ```
 
 ## Platform Differences
@@ -109,57 +102,6 @@ Consumers must provide:
    }
    ```
 
-3. **1Password Service Account** (for orchestrator):
-   - Create Service Account in 1Password
-   - Set `OP_SERVICE_ACCOUNT_TOKEN` on the orchestrator
-   - Create `{username}-tailscale-authkey` items in your vault
-
-4. **Tailscale auth keys** (in 1Password):
-   - Generate auth keys with tags: `tag:devcontainer`, `tag:{username}-container`
-   - Store in 1Password vault as `{username}-tailscale-authkey`
-
-## Orchestrator Features
-
-When enabled, the orchestrator provides:
-
-- **Podman** for rootless container management
-- **devbox-ctl** CLI for container lifecycle operations
-- **1Password CLI** (`op`) for secret retrieval
-- **Git and GitHub CLI** for repository management
-- **Automatic cleanup** of idle/stopped containers
-
-### devbox-ctl Commands
-
-```bash
-# Create a new dev container
-devbox-ctl create my-project
-
-# List your containers
-devbox-ctl list
-
-# Stop/start/destroy containers
-devbox-ctl stop my-project
-devbox-ctl start my-project
-devbox-ctl destroy my-project
-
-# View container status and logs
-devbox-ctl status my-project
-devbox-ctl logs my-project -f
-```
-
-### Container Lifecycle
-
-Default lifecycle settings (configurable in `users.nix`):
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `maxPerUser` | 5 | Max containers per user |
-| `maxGlobal` | 7 | Max containers on orchestrator |
-| `defaultCpu` | 2 | CPU cores per container |
-| `defaultMemory` | 4G | RAM per container |
-| `idleStopDays` | 7 | Auto-stop after N days idle |
-| `stoppedDestroyDays` | 14 | Auto-destroy after N days stopped |
-
 ## Troubleshooting
 
 ### SSH Connection Refused
@@ -188,19 +130,6 @@ podman ps -a
 podman logs <container-name>
 ```
 
-### devbox-ctl Issues
-
-```bash
-# Enable debug output
-DEVBOX_DEBUG=true devbox-ctl list
-
-# Check registry file
-cat ~/.local/share/devbox/containers.json | jq
-
-# Verify 1Password authentication
-op vault list
-```
-
 ### WSL-Specific Issues
 
 ```bash
@@ -216,9 +145,3 @@ ip addr show tailscale0
 # If Tailscale SSH not working, ensure NOT using userspace-networking
 # WSL supports /dev/net/tun, so wireguard-go should work
 ```
-
-## Related Documentation
-
-- [Container README](../containers/README.md) - Container build and usage
-- [Quickstart Guide](../specs/009-devcontainer-orchestrator/quickstart.md) - Full deployment guide
-- [CLI Contract](../specs/009-devcontainer-orchestrator/contracts/README.md) - devbox-ctl reference

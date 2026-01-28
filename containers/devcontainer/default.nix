@@ -1,17 +1,17 @@
 # Dev Container Image Definition
 #
-# This module builds the OCI container image for dev containers using
-# Nix's dockerTools. It creates a layered image with:
-#   - Base layer: coreutils, bash, shadow (for user management)
-#   - CLI tools layer: ripgrep, fd, bat, eza, fzf, jq, git, etc.
-#   - Dev tools layer: neovim, nodejs, uv, bun, etc.
-#   - Service layers: Tailscale, code-server, Zed remote
+# Builds an OCI container image using Nix's dockerTools.buildLayeredImage.
+# Compatible with Docker and Podman.
 #
-# Constitution alignment:
-#   - Principle I: Declarative Configuration (container defined in Nix)
-#   - Principle II: Headless-First Design (CLI-based, no GUI)
-#   - Principle III: Security by Default (minimal image, no root)
-#   - Principle IV: Modular and Reusable (layered for caching)
+# Layers:
+#   - Base: coreutils, bash, shadow (user management)
+#   - CLI tools: ripgrep, fd, bat, eza, fzf, jq, git, etc.
+#   - Dev tools: neovim, nodejs, uv, bun, Rust toolchain
+#   - Services: Tailscale (SSH), code-server (browser IDE), Syncthing (optional)
+#
+# Build: nix build .#devcontainer
+# Load:  podman load < result  (or docker load < result)
+# Run:   podman run -d -e CONTAINER_NAME=mydev devcontainer:latest
 
 {
   pkgs,

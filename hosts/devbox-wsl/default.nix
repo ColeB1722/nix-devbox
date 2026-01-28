@@ -65,13 +65,7 @@
     # Syncthing - File synchronization (Tailscale-only access)
     ../../nixos/syncthing.nix
 
-    # Orchestrator - Dev container management (009-devcontainer-orchestrator)
-    # Note: WSL uses Podman inside WSL, not Docker Desktop, for orchestrator
-    ../../nixos/orchestrator.nix
-    ../../nixos/orchestrator-cleanup.nix
-
-    # Podman for container orchestration on WSL
-    # Unlike bare-metal, WSL needs explicit Podman setup
+    # Podman for container management on WSL
     ../../nixos/podman.nix
 
     # Note: Docker module (../../nixos/docker.nix) is NOT imported for WSL
@@ -182,12 +176,8 @@
     # Enable Syncthing for file sync (disabled by default, user enables as needed)
     syncthing.enable = lib.mkDefault false;
 
-    # Podman for container orchestration (enabled for dev containers on WSL)
+    # Podman for container management (enabled by default on WSL)
     podman.enable = lib.mkDefault true;
-
-    # Orchestrator for dev container management (enabled by default on WSL)
-    orchestrator.enable = lib.mkDefault true;
-    orchestrator.cleanup.enable = lib.mkDefault true;
 
     # Note: Hyprland is NOT available on WSL - no display support
   };

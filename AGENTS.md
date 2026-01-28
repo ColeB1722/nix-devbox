@@ -1,6 +1,6 @@
 # nix-devbox Development Guidelines
 
-Multi-platform Nix configuration for development machines. Supports NixOS (bare-metal, WSL), with planned support for macOS (nix-darwin) and containers (dockertools).
+Multi-platform Nix configuration for development machines. Supports NixOS (bare-metal, WSL, headful desktop) and macOS (nix-darwin).
 
 ## Architecture Overview
 
@@ -13,42 +13,53 @@ nixos/                       # NixOS modules (flat structure)
 ├── ssh.nix                  # SSH hardening
 ├── firewall.nix             # iptables/nftables rules
 ├── tailscale.nix            # Tailscale VPN service
-├── docker.nix               # Docker daemon
+├── podman.nix               # Podman rootless containers
+├── docker.nix               # Docker daemon (legacy, replaced by podman)
 ├── fish.nix                 # Fish shell (system-level)
 ├── users.nix                # User accounts + Home Manager integration
-└── code-server.nix          # Per-user code-server instances
+├── code-server.nix          # Per-user code-server instances
+├── ttyd.nix                 # Web terminal sharing (Tailscale-only)
+├── syncthing.nix            # File synchronization (Tailscale-only)
+└── hyprland.nix             # Wayland compositor (opt-in, headed only)
 
-darwin/                      # nix-darwin modules (planned)
-└── README.md                # Implementation notes
+darwin/                      # nix-darwin modules (macOS)
+├── core.nix                 # Nix settings, system defaults, security
+└── aerospace.nix            # Tiling window manager (like i3)
 
 # ─── Shared User Config (Home Manager) ─────────────────────
 home/
 ├── modules/                 # Reusable HM building blocks
-│   ├── cli.nix              # Core CLI tools (bat, eza, fzf, etc.)
+│   ├── cli.nix              # Core CLI tools (bat, eza, fzf, yazi, etc.)
 │   ├── fish.nix             # Fish shell config (aliases, abbrs)
 │   ├── git.nix              # Git + lazygit + gh
-│   └── dev.nix              # Dev tools (neovim, zellij, AI tools)
+│   ├── dev.nix              # Dev tools (neovim, zellij, AI tools, Rust)
+│   └── remote-access.nix    # code-server + Zed remote config
 ├── profiles/                # Composable bundles
 │   ├── minimal.nix          # cli + fish + git
-│   └── developer.nix        # minimal + dev tools
+│   ├── developer.nix        # minimal + dev tools
+│   ├── workstation.nix      # developer (for local machines)
+│   └── remote.nix           # developer + remote-access (for headless systems)
 └── users/                   # Per-user configs
     ├── coal.nix             # Admin user (imports developer profile)
     └── violino.nix          # Dev user (imports developer profile)
 
-# ─── Container Builds ──────────────────────────────────────
-containers/                  # dockertools image definitions (planned)
-└── README.md                # Implementation notes
-
 # ─── Shared Data ───────────────────────────────────────────
 lib/
-└── users.nix                # User metadata (names, UIDs, SSH keys)
+├── users.nix                # User metadata (names, UIDs, SSH keys)
+├── schema.nix               # Configuration validation
+└── mkHost.nix               # Host configuration helper
 
 # ─── Host Configurations ───────────────────────────────────
 hosts/
 ├── devbox/                  # NixOS bare-metal/VM
 │   ├── default.nix
 │   └── hardware-configuration.nix.example
-└── devbox-wsl/              # NixOS on WSL2
+├── devbox-wsl/              # NixOS on WSL2
+│   └── default.nix
+├── devbox-desktop/          # NixOS headful workstation (Hyprland)
+│   ├── default.nix
+│   └── hardware-configuration.nix.example
+└── macbook/                 # macOS workstation (nix-darwin)
     └── default.nix
 
 # ─── Project Config ────────────────────────────────────────
@@ -99,20 +110,31 @@ sudo nixos-rebuild switch --flake .#devbox   # Deploy to current machine
 nix flake update                             # Update flake inputs
 ```
 
-## WSL Deployment
+## Deployment Commands by Platform
 
-For deploying to Windows Subsystem for Linux:
-
+### NixOS (bare-metal / VM)
 ```bash
-# Inside WSL after cloning the repo
+sudo nixos-rebuild switch --flake .#devbox
+```
+
+### NixOS (WSL2)
+```bash
 sudo nixos-rebuild switch --flake .#devbox-wsl
 ```
 
-Key differences from bare-metal:
-- No hardware-configuration.nix needed
-- Tailscale runs inside WSL (uses wireguard-go)
-- Custom firewall config (allows SSH on port 22)
-- No Docker module (uses Docker Desktop on Windows host)
+### NixOS (Headful Desktop with Hyprland)
+```bash
+sudo nixos-rebuild switch --flake .#devbox-desktop
+```
+
+### macOS (nix-darwin)
+```bash
+# First time (bootstrap nix-darwin)
+nix run nix-darwin -- switch --flake .#macbook
+
+# Subsequent updates
+darwin-rebuild switch --flake .#macbook
+```
 
 ## Adding a New User
 
@@ -142,7 +164,7 @@ Key differences from bare-metal:
    }
    ```
 
-3. Add to `nixos/users.nix` (NixOS) or `darwin/users.nix` (macOS).
+3. Add to `nixos/users.nix` (NixOS) or create darwin user config (macOS).
 
 ## Code Style
 
@@ -189,12 +211,12 @@ Port assignments are defined in `lib/users.nix` under `codeServerPorts`.
 
 ## Platform Support Status
 
-| Platform | Status | Directory |
-|----------|--------|-----------|
-| NixOS (bare-metal) | ✅ Implemented | `nixos/`, `hosts/devbox/` |
-| NixOS (WSL) | ✅ Implemented | `nixos/`, `hosts/devbox-wsl/` |
-| macOS (nix-darwin) | 🚧 Planned | `darwin/` |
-| Containers (dockertools) | 🚧 Planned | `containers/` |
+| Platform | Status | Directory | Host |
+|----------|--------|-----------|------|
+| NixOS (bare-metal) | ✅ Implemented | `nixos/` | `hosts/devbox/` |
+| NixOS (WSL) | ✅ Implemented | `nixos/` | `hosts/devbox-wsl/` |
+| NixOS (headful desktop) | ✅ Implemented | `nixos/` | `hosts/devbox-desktop/` |
+| macOS (nix-darwin) | ✅ Implemented | `darwin/` | `hosts/macbook/` |
 
 ## Module Reference
 
@@ -207,29 +229,45 @@ Port assignments are defined in `lib/users.nix` under `codeServerPorts`.
 | `tailscale.nix` | Tailscale VPN service |
 | `ssh.nix` | Hardened SSH (key-only, no root) |
 | `fish.nix` | Fish shell system enablement |
-| `docker.nix` | Docker daemon + auto-prune |
+| `podman.nix` | Podman rootless containers |
+| `docker.nix` | Docker daemon + auto-prune (legacy) |
 | `users.nix` | User accounts + Home Manager |
 | `code-server.nix` | Per-user VS Code in browser |
+| `ttyd.nix` | Web terminal sharing (Tailscale-only) |
+| `syncthing.nix` | File synchronization service (Tailscale-only) |
+| `hyprland.nix` | Wayland compositor (opt-in, headed systems) |
+
+### Darwin Modules (`darwin/`)
+
+| Module | Purpose |
+|--------|---------|
+| `core.nix` | Nix settings, macOS defaults, security (Touch ID sudo) |
+| `aerospace.nix` | Aerospace tiling window manager |
 
 ### Home Manager Modules (`home/modules/`)
 
 | Module | Purpose |
 |--------|---------|
-| `cli.nix` | Core CLI tools (ripgrep, fd, bat, eza, fzf, direnv) |
+| `cli.nix` | Core CLI tools (ripgrep, fd, bat, eza, fzf, yazi, direnv) |
 | `fish.nix` | Fish shell config (aliases, abbreviations) |
 | `git.nix` | Git config + lazygit + GitHub CLI |
-| `dev.nix` | Dev tools (neovim, zellij, tmux, AI tools, runtimes) |
+| `dev.nix` | Dev tools (neovim, zellij, tmux, AI tools, Rust, runtimes) |
+| `remote-access.nix` | code-server and Zed remote configuration |
 
 ### Home Manager Profiles (`home/profiles/`)
 
-| Profile | Includes |
-|---------|----------|
-| `minimal.nix` | cli + fish + git |
-| `developer.nix` | minimal + dev |
+| Profile | Includes | Use Case |
+|---------|----------|----------|
+| `minimal.nix` | cli + fish + git | Minimal shell environment |
+| `developer.nix` | minimal + dev | Full development environment |
+| `workstation.nix` | developer | Local machines (macOS, Linux desktop) |
+| `remote.nix` | developer + remote-access | Headless/remote systems |
 
 ## Active Technologies
-- Nix (flakes), NixOS 25.05 + nixpkgs, home-manager, nixos-wsl, FlakeHub (007-library-flake-architecture)
-- N/A (configuration-only, no runtime storage) (007-library-flake-architecture)
 
-## Recent Changes
-- 007-library-flake-architecture: Added Nix (flakes), NixOS 25.05 + nixpkgs, home-manager, nixos-wsl, FlakeHub
+- **Nix**: Flakes, NixOS 25.05, nixpkgs, home-manager
+- **Platforms**: NixOS, nixos-wsl, nix-darwin
+- **Containers**: Podman (rootless)
+- **Networking**: Tailscale (SSH, service mesh)
+- **Services**: code-server, Syncthing, ttyd
+- **Window Managers**: Hyprland (NixOS), Aerospace (macOS)

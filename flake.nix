@@ -49,6 +49,13 @@
     # Note: Uses its own nixpkgs to avoid version incompatibility with 24.05
     git-hooks.url = "github:cachix/git-hooks.nix";
 
+    # nix-darwin for macOS system configuration
+    # Enables declarative macOS management alongside NixOS
+    nix-darwin = {
+      url = "github:nix-darwin/nix-darwin/nix-darwin-25.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # System types for multi-platform support
     systems.url = "github:nix-systems/default";
   };
@@ -176,6 +183,10 @@
         fish = import ./nixos/fish.nix;
         users = import ./nixos/users.nix;
         code-server = import ./nixos/code-server.nix;
+        podman = import ./nixos/podman.nix;
+        hyprland = import ./nixos/hyprland.nix;
+        syncthing = import ./nixos/syncthing.nix;
+        ttyd = import ./nixos/ttyd.nix;
 
         # All NixOS modules combined (most consumers want this)
         default = {
@@ -192,6 +203,23 @@
         };
       };
 
+      # ─────────────────────────────────────────────────────────────────────────
+      # Darwin Module Exports (for macOS consumers)
+      # ─────────────────────────────────────────────────────────────────────────
+      darwinModules = {
+        # Individual darwin modules
+        core = import ./darwin/core.nix;
+        aerospace = import ./darwin/aerospace.nix;
+
+        # All darwin modules combined
+        default = {
+          imports = [
+            ./darwin/core.nix
+            ./darwin/aerospace.nix
+          ];
+        };
+      };
+
       homeManagerModules = {
         # Individual Home Manager modules
         cli = import ./home/modules/cli.nix;
@@ -203,6 +231,8 @@
         profiles = {
           minimal = import ./home/profiles/minimal.nix;
           developer = import ./home/profiles/developer.nix;
+          workstation = import ./home/profiles/workstation.nix;
+          remote = import ./home/profiles/remote.nix;
         };
       };
 
@@ -211,6 +241,8 @@
       hosts = {
         devbox = import ./hosts/devbox;
         devbox-wsl = import ./hosts/devbox-wsl;
+        devbox-desktop = import ./hosts/devbox-desktop;
+        macbook = import ./hosts/macbook;
       };
 
       # ─────────────────────────────────────────────────────────────────────────
@@ -308,6 +340,96 @@
             (mkNixpkgsConfig "x86_64-linux")
           ];
         };
+
+        # Headful NixOS Desktop (bare metal workstation with Hyprland)
+        # Uses example users and hardware for CI builds
+        devbox-desktop = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+
+          # Pass example users + flake inputs to all modules
+          specialArgs = {
+            inherit inputs;
+            users = exampleUsers;
+          };
+
+          modules = [
+            # Host definition (imports NixOS modules + Hyprland)
+            ./hosts/devbox-desktop
+
+            # Example hardware configuration for CI
+            ./examples/hardware-example.nix
+
+            # Home Manager as NixOS module for atomic system+user updates
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = {
+                  inherit inputs;
+                  users = exampleUsers;
+                };
+                # Import developer profile for all users
+                users = builtins.listToAttrs (
+                  map (name: {
+                    inherit name;
+                    value = {
+                      imports = [ ./home/profiles/developer.nix ];
+                    };
+                  }) exampleUsers.allUserNames
+                );
+              };
+            }
+
+            # Nixpkgs configuration
+            (mkNixpkgsConfig "x86_64-linux")
+          ];
+        };
+      };
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Darwin Configurations (for macOS)
+      # ─────────────────────────────────────────────────────────────────────────
+      # Example macOS configuration for CI and testing
+      # Uses example users - consumers provide their own user data
+
+      darwinConfigurations = {
+        # Example macOS workstation configuration
+        # Consumers should create their own with actual user data
+        macbook = inputs.nix-darwin.lib.darwinSystem {
+          system = "aarch64-darwin";
+
+          specialArgs = {
+            inherit inputs;
+            users = exampleUsers;
+          };
+
+          modules = [
+            # Darwin host configuration
+            ./hosts/macbook
+
+            # Home Manager as darwin module
+            home-manager.darwinModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = {
+                  inherit inputs;
+                  users = exampleUsers;
+                };
+                users = builtins.listToAttrs (
+                  map (name: {
+                    inherit name;
+                    value = {
+                      imports = [ ./home/profiles/workstation.nix ];
+                    };
+                  }) exampleUsers.allUserNames
+                );
+              };
+            }
+          ];
+        };
       };
 
       # ─────────────────────────────────────────────────────────────────────────
@@ -319,6 +441,35 @@
         schema = import ./lib/schema.nix { inherit (nixpkgs) lib; };
         mkHost = import ./lib/mkHost.nix { inherit (nixpkgs) lib; };
       };
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Packages (Container Images)
+      # ─────────────────────────────────────────────────────────────────────────
+      # OCI container images (Linux only)
+      # Build with: nix build .#devcontainer
+
+      packages =
+        let
+          # Container images are Linux-only (OCI containers)
+          linuxSystems = [
+            "x86_64-linux"
+            "aarch64-linux"
+          ];
+        in
+        nixpkgs.lib.genAttrs linuxSystems (
+          system:
+          let
+            pkgs = import nixpkgs {
+              inherit system;
+              config.allowUnfree = true;
+            };
+          in
+          {
+            # Dev container image (OCI format)
+            # Load with: podman load < result (or docker load < result)
+            devcontainer = import ./containers/devcontainer { inherit pkgs; };
+          }
+        );
 
       # Pre-commit checks for each supported system
       # Run via `nix flake check` for sandboxed validation

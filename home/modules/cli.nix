@@ -28,6 +28,7 @@
     tree
     ripgrep # rg - fast grep
     fd # Fast find alternative
+    yazi # Terminal file manager with vim-like keybindings
 
     # ─────────────────────────────────────────────────────────────────────────
     # System Monitoring

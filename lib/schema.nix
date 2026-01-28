@@ -10,10 +10,6 @@
 #   in
 #     assert schema.validateUsers users;
 #     { /* module configuration */ }
-#
-# Constitution alignment:
-#   - Principle III: Security by Default (validates uid ranges, SSH keys)
-#   - Principle V: Documentation as Code (clear error messages)
 
 { lib }:
 
@@ -201,11 +197,10 @@ rec {
   # Increment this when making breaking changes to the schema
   # Consumers can check this to get migration hints
 
-  schemaVersion = "1.0.0";
+  schemaVersion = "1.1.0";
 
   # Migration hints for future schema changes
   migrationHints = {
-    # Example for future use:
-    # "2.0.0" = "Field 'gitUser' renamed to 'githubUsername'. Update your users.nix.";
+    "1.1.0" = "Removed 'containers' config block (orchestrator feature removed).";
   };
 }

@@ -3,6 +3,14 @@
 # This module provides development-specific tools and configurations.
 # These go beyond the basic CLI tools and are focused on software development.
 #
+# Sections:
+#   - AI Coding Tools: opencode, claude-code, goose-cli
+#   - Version Control Extensions: gh
+#   - Package Managers / Runtimes: nodejs, uv, bun
+#   - Infrastructure: terraform
+#   - Secrets Management: 1password-cli
+#   - Rust Toolchain: rustc, cargo, rustfmt, clippy
+#
 # Constitution alignment:
 #   - Principle I: Declarative Configuration (dev tools in Nix)
 #   - Principle II: Headless-First Design (CLI development tools)
@@ -17,6 +25,7 @@
     # ─────────────────────────────────────────────────────────────────────────
     opencode # OpenCode CLI
     claude-code # Claude Code CLI (unfree - allowed in flake.nix)
+    goose-cli # Block's AI agent CLI for terminal (not the DB migration tool)
 
     # ─────────────────────────────────────────────────────────────────────────
     # Version Control Extensions
@@ -39,6 +48,16 @@
     # Secrets Management
     # ─────────────────────────────────────────────────────────────────────────
     _1password-cli # 1Password CLI (unfree - allowed in flake.nix)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Rust Toolchain
+    # ─────────────────────────────────────────────────────────────────────────
+    # Core Rust development tools from nixpkgs (stable channel).
+    # For nightly/specific versions, consider rust-overlay or fenix.
+    rustc # Rust compiler
+    cargo # Rust package manager and build tool
+    rustfmt # Rust code formatter
+    clippy # Rust linter with helpful suggestions
   ];
 
   programs = {

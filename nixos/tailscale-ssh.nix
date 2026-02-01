@@ -98,9 +98,9 @@ in
       enable = !cfg.disableOpenSSH;
 
       settings = lib.mkIf (!cfg.disableOpenSSH) {
-        # Only listen on Tailscale interface (100.x.x.x addresses)
-        # This prevents SSH access from outside the Tailnet
-        ListenAddress = "100.0.0.0/8";
+        # Note: SSH access is restricted to Tailscale interface via firewall rules
+        # (tailscale0 is in trustedInterfaces). ListenAddress does not support CIDR
+        # notation, so we rely on firewall rules instead of binding restrictions.
 
         # Disable password authentication (security best practice)
         PasswordAuthentication = false;

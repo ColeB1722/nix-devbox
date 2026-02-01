@@ -53,14 +53,8 @@ in
       '';
     };
 
-    secretsDir = lib.mkOption {
-      type = lib.types.path;
-      default = "/run/secrets";
-      description = ''
-        Directory where decrypted secrets are stored.
-        This should be on tmpfs (RAM) for security.
-      '';
-    };
+    # Note: opnix stores secrets in /run/secrets by default.
+    # This is not configurable via the upstream module.
   };
 
   config = lib.mkIf cfg.enable {

@@ -83,7 +83,8 @@ let
             # Memory limit in bytes (GB * 1024^3)
             MemoryMax = lib.mkIf (quota ? memoryGB) "${toString quota.memoryGB}G";
             # Memory high watermark (soft limit) at 90% of max
-            MemoryHigh = lib.mkIf (quota ? memoryGB) "${toString (quota.memoryGB * 90 / 100)}G";
+            # Use MB for precision: GB * 1024 * 0.9 ≈ GB * 922 to avoid integer truncation
+            MemoryHigh = lib.mkIf (quota ? memoryGB) "${toString (quota.memoryGB * 922)}M";
           };
         };
       }

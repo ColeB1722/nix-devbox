@@ -44,6 +44,12 @@ let
     isNormalUser = true;
     inherit (userData) description uid;
 
+    # Initial password for console bootstrap access (optional)
+    # Set initialHashedPassword in users.nix to enable console login before Tailscale is configured
+    # Generate with: nix-shell -p mkpasswd --run 'mkpasswd -m sha-512 "yourpassword"'
+    # This is only used if no password is already set; it won't override existing passwords
+    initialHashedPassword = userData.initialHashedPassword or null;
+
     # Group memberships:
     # - wheel: sudo access (only if isAdmin = true)
     # - docker: run containers without sudo

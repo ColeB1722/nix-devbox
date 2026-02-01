@@ -56,6 +56,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # opnix for 1Password secrets management
+    # Provides declarative secrets fetching from 1Password vaults
+    # Supports NixOS, nix-darwin, and Home Manager
+    opnix = {
+      url = "github:brizzbuzz/opnix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # System types for multi-platform support
     systems.url = "github:nix-systems/default";
   };
@@ -68,6 +76,7 @@
       home-manager,
       nixos-wsl,
       git-hooks,
+      opnix,
       systems,
       ...
     }@inputs:
@@ -188,9 +197,19 @@
         syncthing = import ./nixos/syncthing.nix;
         ttyd = import ./nixos/ttyd.nix;
 
+        # Secrets management (opnix wrapper + upstream module)
+        opnix = {
+          imports = [
+            opnix.nixosModules.default
+            ./nixos/opnix.nix
+          ];
+        };
+
         # All NixOS modules combined (most consumers want this)
         default = {
           imports = [
+            opnix.nixosModules.default
+            ./nixos/opnix.nix
             ./nixos/core.nix
             ./nixos/ssh.nix
             ./nixos/firewall.nix
@@ -211,9 +230,19 @@
         core = import ./darwin/core.nix;
         aerospace = import ./darwin/aerospace.nix;
 
+        # Secrets management (opnix wrapper + upstream module)
+        opnix = {
+          imports = [
+            opnix.darwinModules.default
+            ./darwin/opnix.nix
+          ];
+        };
+
         # All darwin modules combined
         default = {
           imports = [
+            opnix.darwinModules.default
+            ./darwin/opnix.nix
             ./darwin/core.nix
             ./darwin/aerospace.nix
           ];
@@ -242,6 +271,7 @@
         devbox = import ./hosts/devbox;
         devbox-wsl = import ./hosts/devbox-wsl;
         devbox-desktop = import ./hosts/devbox-desktop;
+        container-host = import ./hosts/container-host;
         macbook = import ./hosts/macbook;
       };
 
@@ -263,6 +293,9 @@
           };
 
           modules = [
+            # opnix for 1Password secrets management
+            opnix.nixosModules.default
+
             # Host definition (imports all NixOS modules)
             ./hosts/devbox
 
@@ -311,6 +344,9 @@
             # NixOS-WSL base module (MUST be first)
             nixos-wsl.nixosModules.default
 
+            # opnix for 1Password secrets management
+            opnix.nixosModules.default
+
             # WSL-specific host configuration
             ./hosts/devbox-wsl
 
@@ -353,6 +389,9 @@
           };
 
           modules = [
+            # opnix for 1Password secrets management
+            opnix.nixosModules.default
+
             # Host definition (imports NixOS modules + Hyprland)
             ./hosts/devbox-desktop
 
@@ -385,6 +424,57 @@
             (mkNixpkgsConfig "x86_64-linux")
           ];
         };
+
+        # Container Host (lean multi-tenant Podman host)
+        # Minimal services, Tailscale SSH OAuth, per-user container isolation
+        container-host = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+
+          # Pass example users + flake inputs to all modules
+          specialArgs = {
+            inherit inputs;
+            users = exampleUsers;
+          };
+
+          modules = [
+            # opnix for 1Password secrets management
+            opnix.nixosModules.default
+
+            # Host definition (minimal NixOS modules for containers)
+            ./hosts/container-host
+
+            # Example hardware configuration for CI
+            ./examples/hardware-example.nix
+
+            # Home Manager as NixOS module for atomic system+user updates
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = {
+                  inherit inputs;
+                  users = exampleUsers;
+                };
+                # Import minimal profile + podman-user for container-host users
+                users = builtins.listToAttrs (
+                  map (name: {
+                    inherit name;
+                    value = {
+                      imports = [
+                        ./home/profiles/minimal.nix
+                        ./home/modules/podman-user.nix
+                      ];
+                    };
+                  }) exampleUsers.allUserNames
+                );
+              };
+            }
+
+            # Nixpkgs configuration
+            (mkNixpkgsConfig "x86_64-linux")
+          ];
+        };
       };
 
       # ─────────────────────────────────────────────────────────────────────────
@@ -405,6 +495,9 @@
           };
 
           modules = [
+            # opnix for 1Password secrets management
+            opnix.darwinModules.default
+
             # Darwin host configuration
             ./hosts/macbook
 

@@ -46,6 +46,16 @@
     ];
 
     extraGroups = [ ];
+
+    # Resource quota for container-host (optional)
+    # Limits CPU, memory, and storage for this user's containers.
+    # Admins typically don't have quotas; non-admin users should have them
+    # to prevent a single user from exhausting host resources.
+    resourceQuota = {
+      cpuCores = 2; # Max 2 CPU cores (systemd CPUQuota=200%)
+      memoryGB = 4; # Max 4GB memory (systemd MemoryMax=4G)
+      storageGB = 50; # Max 50GB container storage (filesystem quota)
+    };
   };
 
   # ─────────────────────────────────────────────────────────────────────────────

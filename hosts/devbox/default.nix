@@ -30,6 +30,11 @@
     # Core system settings
     ../../nixos/core.nix
 
+    # Secrets management (1Password via opnix)
+    # Note: Requires opnix.nixosModules.default from flake to be imported
+    # by the consumer. See flake.nix nixosConfigurations for example.
+    ../../nixos/opnix.nix
+
     # Networking and firewall
     ../../nixos/firewall.nix
     ../../nixos/tailscale.nix
@@ -72,8 +77,22 @@
   # Devbox Module Defaults
   # ─────────────────────────────────────────────────────────────────────────────
   devbox = {
+    # ───────────────────────────────────────────────────────────────────────────
+    # Secrets Management (disabled by default)
+    # ───────────────────────────────────────────────────────────────────────────
+    # Enable 1Password secrets management via opnix.
+    # When enabled, you must run `sudo opnix token set` once per machine.
+    secrets.enable = lib.mkDefault false;
+
+    # ───────────────────────────────────────────────────────────────────────────
+    # Tailscale Configuration
+    # ───────────────────────────────────────────────────────────────────────────
     # Enable Tailscale VPN by default (can be disabled by consumer)
     tailscale.enable = lib.mkDefault true;
+
+    # Optional: Set authKeyReference to auto-authenticate via 1Password
+    # Requires devbox.secrets.enable = true
+    # Example: tailscale.authKeyReference = "op://Infrastructure/Tailscale/devbox-auth-key";
 
     # Enable Podman container runtime by default (bare-metal only)
     podman.enable = lib.mkDefault true;

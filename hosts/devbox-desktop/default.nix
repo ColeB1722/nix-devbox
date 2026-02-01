@@ -47,6 +47,11 @@
 
     # Core NixOS modules
     ../../nixos/core.nix
+
+    # Secrets management (1Password via opnix)
+    # Note: Requires opnix.nixosModules.default from flake to be imported
+    # by the consumer. See flake.nix nixosConfigurations for example.
+    ../../nixos/opnix.nix
     ../../nixos/ssh.nix
     ../../nixos/firewall.nix
     ../../nixos/tailscale.nix
@@ -69,6 +74,17 @@
     # NetworkManager for easy network configuration
     networkmanager.enable = true;
   };
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Secrets Management (disabled by default)
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Enable 1Password secrets management via opnix.
+  # When enabled, you must run `sudo opnix token set` once per machine.
+  devbox.secrets.enable = lib.mkDefault false;
+
+  # Optional: Set authKeyReference to auto-authenticate Tailscale via 1Password
+  # Requires devbox.secrets.enable = true
+  # Example: devbox.tailscale.authKeyReference = "op://Infrastructure/Tailscale/desktop-auth-key";
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Hyprland Configuration

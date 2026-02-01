@@ -74,6 +74,45 @@ rec {
       true;
 
   # ─────────────────────────────────────────────────────────────────────────────
+  # Resource Quota Validators (for container-host)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Validate a single resource quota field (int >= 1)
+  validQuotaField =
+    name: field: value:
+    lib.assertMsg (builtins.isInt value) "User '${name}' resourceQuota.${field} must be an integer (got: ${builtins.typeOf value})"
+    && lib.assertMsg (
+      value >= 1
+    ) "User '${name}' resourceQuota.${field} must be >= 1 (got: ${toString value})";
+
+  # Validate resourceQuota (optional field)
+  # If present, must be an attrset with optional cpuCores, memoryGB, storageGB (all int >= 1)
+  validResourceQuota =
+    name: user:
+    if user ? resourceQuota then
+      lib.assertMsg (builtins.isAttrs user.resourceQuota) "User '${name}' resourceQuota must be an attribute set (got: ${builtins.typeOf user.resourceQuota})"
+      && (
+        if user.resourceQuota ? cpuCores then
+          validQuotaField name "cpuCores" user.resourceQuota.cpuCores
+        else
+          true
+      )
+      && (
+        if user.resourceQuota ? memoryGB then
+          validQuotaField name "memoryGB" user.resourceQuota.memoryGB
+        else
+          true
+      )
+      && (
+        if user.resourceQuota ? storageGB then
+          validQuotaField name "storageGB" user.resourceQuota.storageGB
+        else
+          true
+      )
+    else
+      true;
+
+  # ─────────────────────────────────────────────────────────────────────────────
   # User Record Validator
   # ─────────────────────────────────────────────────────────────────────────────
 
@@ -100,7 +139,8 @@ rec {
     && validUid name user
     && validIsAdmin name user
     && validSshKeys name user
-    && validExtraGroups name user;
+    && validExtraGroups name user
+    && validResourceQuota name user;
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Collection Validators
@@ -197,10 +237,12 @@ rec {
   # Increment this when making breaking changes to the schema
   # Consumers can check this to get migration hints
 
-  schemaVersion = "1.1.0";
+  schemaVersion = "1.2.0";
 
   # Migration hints for future schema changes
   migrationHints = {
+    "1.2.0" =
+      "Added optional 'resourceQuota' field for per-user CPU, memory, and storage limits (container-host feature).";
     "1.1.0" = "Removed 'containers' config block (orchestrator feature removed).";
   };
 }

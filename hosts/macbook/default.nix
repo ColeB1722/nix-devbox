@@ -29,9 +29,21 @@
     # Core macOS configuration (Nix settings, system defaults)
     ../../darwin/core.nix
 
+    # Secrets management (1Password via opnix)
+    # Note: Requires opnix.darwinModules.default from flake to be imported
+    # by the consumer. See flake.nix darwinConfigurations for example.
+    ../../darwin/opnix.nix
+
     # Aerospace tiling window manager
     ../../darwin/aerospace.nix
   ];
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Secrets Management (disabled by default)
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Enable 1Password secrets management via opnix.
+  # When enabled, you must run `sudo opnix token set` once per machine.
+  devbox.secrets.enable = lib.mkDefault false;
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Aerospace Configuration

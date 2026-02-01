@@ -1,0 +1,97 @@
+# Hardware Configuration Template - Container Host
+#
+# This file is machine-specific and should be generated on the target system.
+# Copy this to hardware-configuration.nix and customize for your hardware.
+#
+# To generate for your machine:
+#   sudo nixos-generate-config --show-hardware-config > hosts/container-host/hardware-configuration.nix
+#
+# IMPORTANT: For resource quota storage limits, enable filesystem quotas:
+#   - Add "usrquota" to your root or /home filesystem options
+#   - After first boot, initialize quotas:
+#       sudo quotacheck -cugm /home
+#       sudo quotaon /home
+#
+# The actual hardware-configuration.nix is gitignored to prevent machine-specific
+# settings from being committed to the repository.
+
+{ config, lib, pkgs, modulesPath, ... }:
+
+{
+  imports = [
+    (modulesPath + "/installer/scan/not-detected.nix")
+  ];
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Boot Configuration
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Adjust for your system's boot requirements
+
+  boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "nvme" "usbhid" "sd_mod" ];
+  boot.initrd.kernelModules = [ ];
+  boot.kernelModules = [ "kvm-intel" ];  # or "kvm-amd" for AMD CPUs
+  boot.extraModulePackages = [ ];
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Filesystem Configuration
+  # ─────────────────────────────────────────────────────────────────────────────
+  # MUST be customized for your disk layout
+  # IMPORTANT: Add "usrquota" for container storage quota enforcement
+
+  fileSystems."/" = {
+    device = "/dev/disk/by-uuid/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
+    fsType = "ext4";  # or "btrfs", "xfs"
+    # Enable user quotas for container storage limits
+    options = [ "usrquota" ];
+  };
+
+  fileSystems."/boot" = {
+    device = "/dev/disk/by-uuid/XXXX-XXXX";
+    fsType = "vfat";
+  };
+
+  # Alternative: Separate /home partition with quotas
+  # fileSystems."/home" = {
+  #   device = "/dev/disk/by-uuid/YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY";
+  #   fsType = "ext4";
+  #   options = [ "usrquota" ];
+  # };
+
+  swapDevices = [
+    # { device = "/dev/disk/by-uuid/ZZZZZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZZZZZZZZZ"; }
+  ];
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Network Configuration
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  networking.useDHCP = lib.mkDefault true;
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Platform Configuration
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # CPU Microcode
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Uncomment the appropriate line for your CPU
+
+  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  # hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Container Host Specific
+  # ─────────────────────────────────────────────────────────────────────────────
+  # These settings optimize the host for container workloads
+
+  # Enable cgroups v2 (should be default on NixOS 25.05+)
+  # boot.kernelParams = [ "systemd.unified_cgroup_hierarchy=1" ];
+
+  # Increase max inotify watches for container file watching
+  boot.kernel.sysctl = {
+    "fs.inotify.max_user_watches" = 524288;
+    "fs.inotify.max_user_instances" = 1024;
+  };
+}

@@ -50,14 +50,14 @@ rec {
     lib.assertMsg (builtins.isString key && lib.hasPrefix "ssh-" key)
       "User '${name}' has invalid SSH key format: keys must start with 'ssh-' (e.g., 'ssh-ed25519', 'ssh-rsa')";
 
-  # Validate SSH keys list is non-empty and all keys are valid
+  # Validate SSH keys list (optional - can be missing or empty for Tailscale SSH workflows)
   validSshKeys =
     name: user:
-    lib.assertMsg (builtins.isList user.sshKeys) "User '${name}' sshKeys must be a list (got: ${builtins.typeOf user.sshKeys})"
-    && lib.assertMsg (
-      builtins.length user.sshKeys > 0
-    ) "User '${name}' must have at least one SSH public key for remote access"
-    && builtins.all (validSshKey name) user.sshKeys;
+    if user ? sshKeys then
+      lib.assertMsg (builtins.isList user.sshKeys) "User '${name}' sshKeys must be a list (got: ${builtins.typeOf user.sshKeys})"
+      && builtins.all (validSshKey name) user.sshKeys
+    else
+      true; # sshKeys is optional when using Tailscale SSH as primary auth
 
   # Validate isAdmin is a boolean
   validIsAdmin =
@@ -127,7 +127,6 @@ rec {
     && hasField name "email" user
     && hasField name "gitUser" user
     && hasField name "isAdmin" user
-    && hasField name "sshKeys" user
     &&
 
       # Field value validation
@@ -237,10 +236,11 @@ rec {
   # Increment this when making breaking changes to the schema
   # Consumers can check this to get migration hints
 
-  schemaVersion = "1.2.0";
+  schemaVersion = "1.3.0";
 
   # Migration hints for future schema changes
   migrationHints = {
+    "1.3.0" = "Made 'sshKeys' optional (can be missing or empty) for Tailscale SSH workflows.";
     "1.2.0" =
       "Added optional 'resourceQuota' field for per-user CPU, memory, and storage limits (container-host feature).";
     "1.1.0" = "Removed 'containers' config block (orchestrator feature removed).";

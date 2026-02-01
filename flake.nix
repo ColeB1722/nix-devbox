@@ -128,7 +128,6 @@
             };
 
             # Detect private keys (SSH, PGP, etc.)
-            # Uses gitleaks pattern matching instead of grep to avoid false positives
             detect-private-key = {
               enable = true;
               name = "detect-private-key";
@@ -139,7 +138,7 @@
                   # Exclude flake.nix to avoid matching this hook definition
                   for file in "$@"; do
                     if [[ "$file" != "flake.nix" ]] && [[ -f "$file" ]]; then
-                      if grep -l "BEGIN.*PRIVATE" "$file" 2>/dev/null | grep -v "detect-private"; then
+                      if grep -q "BEGIN.*PRIVATE" "$file" 2>/dev/null; then
                         echo "ERROR: Private key detected in $file!"
                         exit 1
                       fi

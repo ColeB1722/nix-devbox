@@ -113,7 +113,7 @@ in
     # in opnix. The secret will be fetched from 1Password at activation time.
 
     services.onepassword-secrets.secrets = lib.mkIf (cfg.authKeyReference != null && secretsEnabled) {
-      tailscale-auth-key = {
+      tailscaleAuthKey = {
         reference = cfg.authKeyReference;
         mode = "0400";
         # Restart tailscaled if the auth key changes (rare, but possible)
@@ -132,7 +132,7 @@ in
       # Use auth key file if opnix is providing it
       authKeyFile = lib.mkIf (
         cfg.authKeyReference != null && secretsEnabled
-      ) config.services.onepassword-secrets.secrets.tailscale-auth-key.path;
+      ) config.services.onepassword-secrets.secrets.tailscaleAuthKey.path;
     };
 
     # Ensure tailscale CLI is available

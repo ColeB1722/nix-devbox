@@ -55,8 +55,8 @@ let
     home = "/home/${userData.name}";
     createHome = true;
 
-    # SSH authorized keys from user data
-    openssh.authorizedKeys.keys = userData.sshKeys;
+    # SSH authorized keys from user data (optional - empty if using Tailscale SSH only)
+    openssh.authorizedKeys.keys = userData.sshKeys or [ ];
 
     # Default shell - Fish for modern CLI experience
     shell = pkgs.fish;

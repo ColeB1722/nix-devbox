@@ -235,9 +235,9 @@ in
               # Set quota for ${name}: ${toString userData.resourceQuota.storageGB}GB
               if command -v setquota &> /dev/null; then
                 # Format: setquota -u <user> <soft-block> <hard-block> <soft-inode> <hard-inode> <filesystem>
-                # Convert GB to KB (1GB = 1048576 KB), allow 10% overage for soft limit
+                # Convert GB to KB (1GB = 1048576 KB), add 1GB grace period for hard limit
                 SOFT_KB=$(( ${toString userData.resourceQuota.storageGB} * 1048576 ))
-                HARD_KB=$(( ${toString userData.resourceQuota.storageGB} * 1048576 + 1048576 ))
+                HARD_KB=$(( SOFT_KB + 1048576 ))
                 setquota -u ${name} $SOFT_KB $HARD_KB 0 0 /home 2>/dev/null || true
               fi
             ''

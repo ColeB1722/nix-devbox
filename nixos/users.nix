@@ -3,6 +3,11 @@
 # Creates user accounts and integrates Home Manager for per-user environment
 # management. User data is provided by consumers via `specialArgs`.
 #
+# Features:
+#   - Automatic user creation from users.nix data
+#   - Home Manager integration
+#   - Optional resource quota enforcement via systemd slices (container-host)
+#
 # Constitution alignment:
 #   - Principle I: Declarative Configuration (users managed in Nix)
 #   - Principle III: Security by Default (SSH keys required, password auth disabled)
@@ -11,6 +16,10 @@
 #
 # Required specialArgs:
 #   users - User data attrset (see lib/schema.nix for schema)
+#
+# Optional user fields:
+#   resourceQuota - Per-user resource limits (cpuCores, memoryGB, storageGB)
+#                   Enforced via systemd user slices (cgroups v2)
 #
 # Usage:
 #   nixpkgs.lib.nixosSystem {
@@ -53,6 +62,43 @@ let
     shell = pkgs.fish;
   };
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Resource Quota Helpers (for container-host)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Generate systemd slice configuration for a user's resource quota
+  # Returns null if user has no resourceQuota defined
+  mkUserSliceConfig =
+    _name: userData:
+    if userData ? resourceQuota then
+      let
+        quota = userData.resourceQuota;
+      in
+      {
+        # Slice name matches systemd's user slice naming: user-<uid>.slice
+        "user-${toString userData.uid}" = {
+          sliceConfig = {
+            # CPU limit: cores * 100% (e.g., 2 cores = CPUQuota=200%)
+            CPUQuota = lib.mkIf (quota ? cpuCores) "${toString (quota.cpuCores * 100)}%";
+            # Memory limit in bytes (GB * 1024^3)
+            MemoryMax = lib.mkIf (quota ? memoryGB) "${toString quota.memoryGB}G";
+            # Memory high watermark (soft limit) at 90% of max
+            MemoryHigh = lib.mkIf (quota ? memoryGB) "${toString (quota.memoryGB * 90 / 100)}G";
+          };
+        };
+      }
+    else
+      null;
+
+  # Flatten the slice configs into a single attrset for systemd.slices
+  allSliceConfigs = lib.foldl' (
+    acc: name:
+    let
+      cfg = mkUserSliceConfig name users.${name};
+    in
+    if cfg != null then acc // cfg else acc
+  ) { } users.allUserNames;
+
 in
 {
   # ─────────────────────────────────────────────────────────────────────────────
@@ -92,6 +138,14 @@ in
       value = mkUserConfig name users.${name};
     }) users.allUserNames
   );
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Resource Quota Enforcement (systemd slices)
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Configure systemd user slices with resource limits from resourceQuota
+  # This uses cgroups v2 for CPU and memory limits
+
+  systemd.slices = allSliceConfigs;
 
   # ─────────────────────────────────────────────────────────────────────────────
   # System Configuration

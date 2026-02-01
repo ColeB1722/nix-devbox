@@ -13,6 +13,7 @@ nixos/                       # NixOS modules (flat structure)
 ├── ssh.nix                  # SSH hardening
 ├── firewall.nix             # iptables/nftables rules
 ├── tailscale.nix            # Tailscale VPN service
+├── opnix.nix                # 1Password secrets management (opnix wrapper)
 ├── podman.nix               # Podman rootless containers
 ├── docker.nix               # Docker daemon (legacy, replaced by podman)
 ├── fish.nix                 # Fish shell (system-level)
@@ -24,6 +25,7 @@ nixos/                       # NixOS modules (flat structure)
 
 darwin/                      # nix-darwin modules (macOS)
 ├── core.nix                 # Nix settings, system defaults, security
+├── opnix.nix                # 1Password secrets management (opnix wrapper)
 └── aerospace.nix            # Tiling window manager (like i3)
 
 # ─── Shared User Config (Home Manager) ─────────────────────
@@ -172,6 +174,61 @@ darwin-rebuild switch --flake .#macbook
 - **Module pattern**: Use `lib.mkDefault` for overridable defaults
 - **Flat structure**: One module per file, descriptive filenames
 
+## Secrets Management
+
+This repo uses [opnix](https://github.com/brizzbuzz/opnix) for declarative 1Password secrets management. Secrets are fetched from 1Password vaults at system activation time and stored securely in `/run/secrets` (tmpfs/RAM only).
+
+### Setup (One-Time)
+
+1. **Create a 1Password Service Account** at https://my.1password.com/developer
+2. **Grant read access** to a vault containing your infrastructure secrets (e.g., "Infrastructure")
+3. **Store your Tailscale auth key** in 1Password: `op://Infrastructure/Tailscale/auth-key`
+
+### Bootstrap (Per Machine)
+
+```bash
+# Provision the service account token (one-time per machine)
+sudo opnix token set
+# Paste your 1Password service account token when prompted
+
+# Deploy configuration
+sudo nixos-rebuild switch --flake .#devbox
+```
+
+### Configuration
+
+Enable secrets management and configure Tailscale auto-authentication:
+
+```nix
+# In your host configuration (e.g., hosts/devbox/default.nix)
+devbox = {
+  secrets.enable = true;  # Enable opnix
+  
+  tailscale = {
+    enable = true;
+    authKeyReference = "op://Infrastructure/Tailscale/auth-key";
+  };
+};
+```
+
+### How It Works
+
+1. **Token storage**: `/etc/opnix-token` (mode 0400, root only)
+2. **Secret storage**: `/run/secrets/*` (tmpfs, RAM only - never written to disk)
+3. **Tailscale**: Auth key only needed for initial registration; state persists in `/var/lib/tailscale`
+4. **Offline operation**: After initial Tailscale registration, 1Password is not required for reboots
+
+### Security Model
+
+| Aspect | Implementation |
+|--------|----------------|
+| Token storage | `/etc/opnix-token` mode 0400, root-only |
+| Secret storage | `/run/secrets/*` (tmpfs, RAM-only) |
+| Vault access | Service account with read-only access |
+| Blast radius | Compromise = access to Infrastructure vault only |
+
+**Recommendation**: Create a dedicated "Infrastructure" vault containing only deployment secrets (Tailscale keys, etc.). Keep personal passwords in separate vaults.
+
 ## Security
 
 ### Pre-commit Security Hooks
@@ -195,6 +252,7 @@ This repo is designed to be safely public:
 - SSH public keys only (private keys never committed)
 - Pre-commit hooks prevent accidental secret commits
 - Hardware-specific configs are gitignored
+- 1Password service account tokens provisioned out-of-band (not in repo)
 
 ## Service Access
 
@@ -264,10 +322,16 @@ Port assignments are defined in `lib/users.nix` under `codeServerPorts`.
 | `remote.nix` | developer + remote-access | Headless/remote systems |
 
 ## Active Technologies
+- Nix (NixOS 25.05) + Podman (rootless), Tailscale, systemd (cgroups v2) (011-container-host)
+- Filesystem quotas (ext4/xfs/btrfs) for per-user container storage limits (011-container-host)
 
 - **Nix**: Flakes, NixOS 25.05, nixpkgs, home-manager
 - **Platforms**: NixOS, nixos-wsl, nix-darwin
 - **Containers**: Podman (rootless)
 - **Networking**: Tailscale (SSH, service mesh)
+- **Secrets**: opnix (1Password integration)
 - **Services**: code-server, Syncthing, ttyd
 - **Window Managers**: Hyprland (NixOS), Aerospace (macOS)
+
+## Recent Changes
+- 011-container-host: Added Nix (NixOS 25.05) + Podman (rootless), Tailscale, systemd (cgroups v2)

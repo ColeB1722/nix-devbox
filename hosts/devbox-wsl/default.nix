@@ -44,6 +44,11 @@
     # Core system settings (locale, timezone, nix settings)
     ../../nixos/core.nix
 
+    # Secrets management (1Password via opnix)
+    # Note: Requires opnix.nixosModules.default from flake to be imported
+    # by the consumer. See flake.nix nixosConfigurations for example.
+    ../../nixos/opnix.nix
+
     # Security hardening for SSH
     ../../nixos/ssh.nix
 
@@ -163,11 +168,25 @@
   # Devbox Module Defaults
   # ─────────────────────────────────────────────────────────────────────────────
   devbox = {
+    # ───────────────────────────────────────────────────────────────────────────
+    # Secrets Management (disabled by default)
+    # ───────────────────────────────────────────────────────────────────────────
+    # Enable 1Password secrets management via opnix.
+    # When enabled, you must run `sudo opnix token set` once per machine.
+    secrets.enable = lib.mkDefault false;
+
+    # ───────────────────────────────────────────────────────────────────────────
+    # Tailscale Configuration
+    # ───────────────────────────────────────────────────────────────────────────
     # Enable Tailscale with WSL-compatible settings
     tailscale = {
       enable = lib.mkDefault true;
       # No routing features needed for basic connectivity
       useRoutingFeatures = lib.mkDefault "none";
+
+      # Optional: Set authKeyReference to auto-authenticate via 1Password
+      # Requires devbox.secrets.enable = true
+      # Example: authKeyReference = "op://Infrastructure/Tailscale/devbox-wsl-auth-key";
     };
 
     # Enable ttyd for terminal sharing (disabled by default, user enables as needed)

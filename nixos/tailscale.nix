@@ -132,7 +132,7 @@ in
       # Use auth key file if opnix is providing it
       authKeyFile = lib.mkIf (
         cfg.authKeyReference != null && secretsEnabled
-      ) config.services.onepassword-secrets.secrets.tailscaleAuthKey.path;
+      ) config.services.onepassword-secrets.secretPaths.tailscaleAuthKey;
     };
 
     # Ensure tailscale CLI is available

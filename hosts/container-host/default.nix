@@ -43,6 +43,9 @@
     # Core system settings (locale, timezone, nix)
     ../../nixos/core.nix
 
+    # Package overlays (security-critical packages from unstable)
+    ../../nixos/overlays.nix
+
     # Secrets management (1Password via opnix)
     # Note: Requires opnix.nixosModules.default from flake to be imported
     # by the consumer. See flake.nix nixosConfigurations for example.

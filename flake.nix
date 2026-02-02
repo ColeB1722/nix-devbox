@@ -72,7 +72,6 @@
     {
       self,
       nixpkgs,
-      nixpkgs-unstable,
       home-manager,
       nixos-wsl,
       git-hooks,
@@ -166,13 +165,9 @@
             "terraform" # Infrastructure as code (FR-022)
           ];
 
-        # Overlay: Use unstable Tailscale for security updates
-        # nixos-25.05 stable has older Tailscale; unstable has security patches
-        nixpkgs.overlays = [
-          (_final: prev: {
-            inherit (nixpkgs-unstable.legacyPackages.${prev.system}) tailscale;
-          })
-        ];
+        # Note: Security-critical package overlays (e.g., Tailscale from unstable)
+        # are now applied via nixos/overlays.nix module, which is imported by all hosts.
+        # This ensures consumers automatically get security updates without extra config.
       };
     in
     {
@@ -210,6 +205,7 @@
             opnix.nixosModules.default
             ./nixos/opnix.nix
             ./nixos/core.nix
+            ./nixos/overlays.nix
             ./nixos/ssh.nix
             ./nixos/firewall.nix
             ./nixos/tailscale.nix
